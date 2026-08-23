@@ -322,7 +322,7 @@ def ai_ranking(coches: list, now_iso: str):
 
     lineas = ["id|precio|año|km|CV|versión|lugar|val"]
     for c in coches[:40]:
-        lineas.append(f"{c['id']}|{c['precio']}€|{c['anyo']}|{c['km']}km|{c['cv']}CV|"
+        lineas.append(f"{c['id']}|{c['precio']}€|{c['anyo']}|{c['km']}km|{c.get('modelo') or str(c['cv'])+'CV'}|"
                       f"{c['titulo'][:24]}|{c['lugares'][:12]}|{c.get('rating') or '-'}")
     sysmsg = ("Eres un experto en coches de ocasión Toyota Corolla Touring Sports "
               "híbridos. Respondes SOLO con JSON válido, sin texto adicional.")
@@ -397,6 +397,19 @@ def ai_ranking(coches: list, now_iso: str):
     return None
 
 
+def version_de(titulo: str, hp) -> str:
+    """Modelo del Corolla TS: 140H / 180H / 200H (por título, con fallback por CV)."""
+    t = (titulo or "").upper()
+    for tag in ("200H", "180H", "140H"):
+        if tag in t:
+            return tag
+    try:
+        hp = int(hp)
+    except (TypeError, ValueError):
+        return "Otro"
+    return {140: "140H", 178: "200H", 180: "180H", 184: "180H", 196: "200H"}.get(hp, f"{hp} CV")
+
+
 def write_site(inv_groups, inv_ads_count, new_group_ids, drop_group_ids, now_iso) -> None:
     """Genera docs/index.html (dashboard) inyectando los datos en docs/plantilla.html."""
     import statistics
@@ -407,27 +420,44 @@ def write_site(inv_groups, inv_ads_count, new_group_ids, drop_group_ids, now_iso
         return
     site_dir.mkdir(exist_ok=True)
 
-    # histórico del precio medio (una línea por tirada)
+    # histórico de precios (una línea por tirada): mínimo, mediano y medio.
+    # migra el formato antiguo (fecha,coches,precio_medio) al nuevo de 5 columnas.
     hist_file = STATE_DIR / "historico_precios.csv"
     cars = [g[0] for g in inv_groups]
+    filas = []
+    if hist_file.exists():
+        with hist_file.open(newline="", encoding="utf-8") as fh:
+            lector = csv.reader(fh)
+            next(lector, None)                      # cabecera (antigua o nueva)
+            for r in lector:
+                if len(r) >= 5:
+                    filas.append(r[:5])
+                elif len(r) == 3:
+                    filas.append([r[0], r[1], "", "", r[2]])   # vieja → nueva
     if cars:
-        nuevo_hist = not hist_file.exists()
-        with hist_file.open("a", newline="", encoding="utf-8") as fh:
+        precios = sorted(c["price"] for c in cars)
+        filas.append([now_iso[:16], len(cars), precios[0],
+                      precios[len(precios) // 2], round(statistics.mean(precios))])
+        with hist_file.open("w", newline="", encoding="utf-8") as fh:
             w = csv.writer(fh)
-            if nuevo_hist:
-                w.writerow(["fecha", "coches", "precio_medio"])
-            w.writerow([now_iso[:16], len(cars), round(statistics.mean(c["price"] for c in cars))])
+            w.writerow(["fecha", "coches", "minimo", "mediano", "medio"])
+            w.writerows(filas)
     historico = []
     if hist_file.exists():
         for row in csv.DictReader(hist_file.open(encoding="utf-8")):
             try:
-                historico.append({"fecha": row["fecha"], "coches": int(row["coches"]),
-                                  "precio": int(row["precio_medio"])})
+                historico.append({
+                    "fecha": row["fecha"], "coches": int(row["coches"]),
+                    "minimo": int(row["minimo"]) if row.get("minimo") else None,
+                    "mediano": int(row["mediano"]) if row.get("mediano") else None,
+                    "medio": int(row.get("medio") or row.get("precio_medio") or 0) or None,
+                    "precio": int(row.get("medio") or row.get("precio_medio") or 0) or None})
             except (KeyError, ValueError):
                 pass
 
     inventario = [{
-        "id": g[0].get("id", ""), "precio": g[0]["price"], "anyo": g[0].get("year"), "km": g[0].get("km"),
+        "id": g[0].get("id", ""), "modelo": version_de(g[0].get("title", ""), g[0].get("hp")),
+        "precio": g[0]["price"], "anyo": g[0].get("year"), "km": g[0].get("km"),
         "cv": g[0].get("hp"), "titulo": g[0].get("title", ""), "url": g[0].get("url", ""),
         "urls": [a.get("url", "") for a in g], "n": len(g), "lugares": places_cell(g),
         "tipo": g[0].get("tipo", ""), "visto": max(x.get("last_seen", "") for x in g),

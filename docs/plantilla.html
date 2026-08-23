@@ -66,7 +66,7 @@
 <div class="kpis" id="kpis"></div>
 
 <div class="filtros card">
-  <div class="grupo" id="fCV"><span class="lab">Potencia</span></div>
+  <div class="grupo" id="fCV"><span class="lab">Modelo</span></div>
   <div class="grupo" id="fTrim"><span class="lab">Acabado</span></div>
   <div class="grupo" id="fVista"><span class="lab">Vista</span></div>
   <div class="grupo" id="fReset"></div>
@@ -75,10 +75,10 @@
 <div class="grid">
   <div class="card"><h3>Distribución de precios</h3><div id="c1"></div></div>
   <div class="card"><h3>Precio vs kilometraje</h3><div id="c2"></div></div>
-  <div class="card"><h3>Potencia · unidades y precio medio</h3><div id="c3"></div></div>
+  <div class="card"><h3>Modelo · unidades y precio medio</h3><div id="c3"></div></div>
   <div class="card"><h3>Año de matriculación</h3><div id="c4"></div></div>
   <div class="card"><h3>Coches nuevos por día 🆕</h3><div id="c5"></div></div>
-  <div class="card"><h3>Precio medio del inventario 📈</h3><div id="c6"></div></div>
+  <div class="card"><h3>Precio del inventario: mín · mediano · medio 📈</h3><div id="c6"></div></div>
 </div>
 
 <div class="rankwrap card" id="rankSec" style="padding-bottom:14px"></div>
@@ -103,18 +103,18 @@ const fmtN = n => n==null ? '—' : n.toLocaleString('es-ES');
 const esc = s => (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function svgEl(w,h){ return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">`; }
 
-/* ─── acabados ─── */
-const TRIMS = [['GR Sport',/gr ?sport/i],['Advance Luxury',/advance luxury/i],['Advance',/advance/i],
-  ['Style Edition',/style edition/i],['Style',/style/i],['Active Tech',/active tech/i],
-  ['Active Plus',/active plus/i],['Active',/active/i],['Business',/business/i]];
+/* ─── modelos y acabados ─── */
+const versionDe = c => c.modelo || ({140:'140H',178:'200H',180:'180H',184:'180H',196:'200H'}[c.cv] || c.cv+' CV');
+const TRIMS = [['GR Sport',/gr\s?sport/i],['Advance',/advance/i],['Style',/style/i],
+               ['Active',/active/i],['Business',/business/i]];
 const trimDe = t => { for(const [n,re] of TRIMS) if(re.test(t)) return n; return 'Otro'; };
 
 /* ─── estado de filtros ─── */
-let F = {cv:'all', trim:'all', vista:'lista'};
+let F = {modelo:'all', trim:'all', vista:'lista'};
 
 function filtrar(){
   return DATA.inventario.filter(c =>
-    (F.cv==='all' || c.cv===+F.cv) && (F.trim==='all' || trimDe(c.titulo)===F.trim));
+    (F.modelo==='all' || versionDe(c)===F.modelo) && (F.trim==='all' || trimDe(c.titulo)===F.trim));
 }
 
 /* ─── ranking: IA o heurístico ─── */
@@ -226,14 +226,14 @@ function c3(I){
   const box=document.getElementById('c3');
   if(!I.length){box.innerHTML='<p class=mini>sin coches con estos filtros</p>';return}
   const M={};
-  I.forEach(c=>{ (M[c.cv]=M[c.cv]||[]).push(c.precio) });
-  const filas=Object.entries(M).map(([cv,ps])=>({cv:+cv,n:ps.length,
-    med:ps.sort((a,b)=>a-b)[Math.floor(ps.length/2)]})).sort((a,b)=>a.cv-b.cv);
+  I.forEach(c=>{ (M[versionDe(c)]=M[versionDe(c)]||[]).push(c.precio) });
+  const filas=Object.entries(M).map(([mod,ps])=>({mod,n:ps.length,
+    med:ps.sort((a,b)=>a-b)[Math.floor(ps.length/2)]})).sort((a,b)=>a.mod.localeCompare(b.mod));
   const W=420,H=filas.length*46+16, mx=Math.max(...filas.map(f=>f.n));
   let s=svgEl(W,H), y=6;
   filas.forEach(f=>{
     const w=(W-150)*(f.n/mx);
-    s+=`<text x=0 y=${y+14} fill=#e6edf3 font-size=12>${f.cv} CV</text>`+
+    s+=`<text x=0 y=${y+14} fill=#e6edf3 font-size=12>${f.mod}</text>`+
        `<rect x=52 y=${y+2} width=${w} height=18 rx=4 fill=#7ee787 opacity=.75><title>${f.n} coches</title></rect>`+
        `<text x=${56+w} y=${y+15} fill=#9aa7bd font-size=11>${f.n}</text>`+
        `<text x=${W-2} y=${y+15} fill=#9aa7bd font-size=10 text-anchor=end>medio ${fmtE(f.med)}</text>`;
@@ -281,18 +281,28 @@ function c6(){
   const Hs=DATA.historico||[];
   const box=document.getElementById('c6');
   if(Hs.length<2){box.innerHTML='<p class=mini>se dibujará a partir de la 2ª tirada 📊 (global, sin filtros)</p>';return}
+  const series=[
+    {k:'minimo', c:'#7ee787', n:'mín'},
+    {k:'mediano', c:'#4cc2ff', n:'mediano'},
+    {k:'medio',   c:'#ffb86c', n:'medio'}
+  ].filter(s=>Hs.some(h=>h[s.k]!=null));
+  if(!series.length) series.push({k:'precio', c:'#ffb86c', n:'medio'});
+  const valores=series.flatMap(s=>Hs.map(h=>h[s.k])).filter(v=>v!=null);
+  const mn=Math.min(...valores), mx=Math.max(...valores);
   const W=420,H=190,pad=34;
-  const ps=Hs.map(h=>h.precio), mn=Math.min(...ps), mx=Math.max(...ps);
   const X=i=>36+(W-46)*(i/(Hs.length-1)), Y=p=>H-pad+4-(H-pad-16)*((p-mn)/Math.max(1,mx-mn));
   let s=svgEl(W,H);
   s+=`<line x1=${X(0)} y1=${Y(mn)} x2=${X(Hs.length-1)} y2=${Y(mn)} stroke=#1d2740 stroke-dasharray=3 4/>`;
   s+=`<text x=4 y=${Y(mn)+3} fill=#9aa7bd font-size=9>${(mn/1000)|0}k</text><text x=4 y=${Y(mx)+3} fill=#9aa7bd font-size=9>${(mx/1000)|0}k</text>`;
-  let path='';
-  Hs.forEach((h,i)=>{path+=(i?'L':'M')+X(i).toFixed(1)+' '+Y(h.precio).toFixed(1)+' '});
-  s+=`<path d="${path}" fill=none stroke=#ffb86c stroke-width=2.5 stroke-linejoin=round/>`;
-  const last=Hs[Hs.length-1];
-  s+=`<circle cx=${X(Hs.length-1)} cy=${Y(last.precio)} r=4 fill=#ffb86c><title>${last.fecha}: ${fmtE(last.precio)} (${last.coches} coches)</title></circle>`;
-  s+=`<text x=${W-6} y=14 fill=#9aa7bd font-size=9 text-anchor=end>${fmtE(last.precio)} · ${last.coches} coches</text></svg>`;
+  series.forEach(ser=>{
+    let path='';
+    Hs.forEach((h,i)=>{ if(h[ser.k]!=null) path+=(path?'L':'M')+X(i).toFixed(1)+' '+Y(h[ser.k]).toFixed(1)+' '});
+    s+=`<path d="${path}" fill=none stroke=${ser.c} stroke-width=2 stroke-linejoin=round/>`;
+  });
+  const ult=Hs[Hs.length-1];
+  const leyenda=series.map(ser=>`<tspan fill=${ser.c}>■ ${ser.n} ${fmtE(ult[ser.k]??ult.precio)}</tspan>`).join('  ');
+  s+=`<text x=${W-6} y=14 fill=#9aa7bd font-size=9 text-anchor=end>${leyenda}</text>`;
+  s+=`<text x=4 y=${H-4} fill=#9aa7bd font-size=8.5>escala ampliada ${fmtE(mn)}–${fmtE(mx)} · ${ult.coches} coches</text></svg>`;
   box.innerHTML=s;
 }
 
@@ -343,13 +353,13 @@ function tabla(I){
     const rows=[...I].sort((a,b)=>{const A=a[orden.k],B=b[orden.k];return(typeof A=='number'?A-B:(''+A).localeCompare(''+B))*(orden.asc?1:-1)});
     html=rows.map(filaCoche).join('');
   }else{
-    const clave = F.vista==='cv' ? c=>c.cv+' CV' : c=>trimDe(c.titulo);
+    const clave = F.vista==='modelo' ? c=>versionDe(c) : c=>trimDe(c.titulo);
     const grupos={};
     I.forEach(c=>{const k=clave(c);(grupos[k]=grupos[k]||[]).push(c)});
     Object.entries(grupos)
-      .sort((a,b)=>F.vista==='cv'?parseInt(a[0])-parseInt(b[0]):a[0].localeCompare(b[0]))
+      .sort((a,b)=>F.vista==='modelo'?parseInt(a[0])-parseInt(b[0]):a[0].localeCompare(b[0]))
       .forEach(([k,g])=>{
-        html+=`<tr class=sec><td colspan=8>${F.vista==='cv'?'⚡':'🚘'} ${esc(k)} · ${g.length} coches · desde ${fmtE(Math.min(...g.map(c=>c.precio)))}</td></tr>`;
+        html+=`<tr class=sec><td colspan=8>${F.vista==='modelo'?'⚡':'🚘'} ${esc(k)} · ${g.length} coches · desde ${fmtE(Math.min(...g.map(c=>c.precio)))}</td></tr>`;
         html+=[...g].sort((a,b)=>a.precio-b.precio).map(filaCoche).join('');
       });
   }
@@ -359,25 +369,26 @@ function tabla(I){
 /* ─── filtros UI ─── */
 function chip(txt,on,fn){const b=document.createElement('button');b.className='chip'+(on?' on':'');b.textContent=txt;b.onclick=fn;return b}
 function construirFiltros(){
-  const cvs=[...new Set(DATA.inventario.map(c=>c.cv))].sort((a,b)=>a-b);
+  const modelos=[...new Set(DATA.inventario.map(versionDe))].sort();
   const g1=document.getElementById('fCV');
-  g1.appendChild(chip('Todos',F.cv==='all',()=>{F.cv='all';refresco()}));
-  cvs.forEach(v=>g1.appendChild(chip(v+' CV',F.cv===v,()=>{F.cv=v;refresco()})));
+  g1.appendChild(chip('Todos',F.modelo==='all',()=>{F.modelo='all';refresco()}));
+  modelos.forEach(v=>g1.appendChild(chip(v,F.modelo===v,()=>{F.modelo=v;refresco()})));
   const trims=[...new Set(DATA.inventario.map(c=>trimDe(c.titulo)))].sort((a,b)=>a.localeCompare(b));
   const g2=document.getElementById('fTrim');
   g2.appendChild(chip('Todos',F.trim==='all',()=>{F.trim='all';refresco()}));
   trims.forEach(t=>g2.appendChild(chip(t,F.trim===t,()=>{F.trim=t;refresco()})));
   const g3=document.getElementById('fVista');
-  [['lista','📋 Lista'],['cv','⚡ Por CV'],['acabado','🚘 Por acabado']].forEach(([v,t])=>
+  [['lista','📋 Lista'],['modelo','⚡ Por modelo'],['acabado','🚘 Por acabado']].forEach(([v,t])=>
     g3.appendChild(chip(t,F.vista===v,()=>{F.vista=v;refresco()})));
   const g4=document.getElementById('fReset');
-  g4.appendChild(chip('✕ limpiar',false,()=>{F={cv:'all',trim:'all',vista:'lista'};refresco()}));
+  g4.appendChild(chip('✕ limpiar',false,()=>{F={modelo:'all',trim:'all',vista:'lista'};refresco()}));
 }
 function refresco(){
-  document.querySelectorAll('#fCV .chip').forEach((b,i)=>b.classList.toggle('on', i===0?F.cv==='all':F.cv===+b.textContent.replace(' CV','')));
+  const modelos=[...new Set(DATA.inventario.map(versionDe))].sort();
+  document.querySelectorAll('#fCV .chip').forEach((b,i)=>b.classList.toggle('on', i===0?F.modelo==='all':F.modelo===modelos[i-1]));
   const trims=[...new Set(DATA.inventario.map(c=>trimDe(c.titulo)))].sort((a,b)=>a.localeCompare(b));
   document.querySelectorAll('#fTrim .chip').forEach((b,i)=>b.classList.toggle('on', i===0?F.trim==='all':F.trim===trims[i-1]));
-  const vistas=['lista','cv','acabado'];
+  const vistas=['lista','modelo','acabado'];
   document.querySelectorAll('#fVista .chip').forEach((b,i)=>b.classList.toggle('on',F.vista===vistas[i]));
   const I=filtrar();
   kpis(I);c1(I);c2(I);c3(I);c4(I);c5(I);c6();rankingSec(I);tabla(I);
