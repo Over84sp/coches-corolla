@@ -21,24 +21,40 @@
   .kpi .v{font-size:22px;font-weight:700}
   .kpi .l{font-size:12px;color:var(--tx2);margin-top:2px}
   .kpi.a .v{color:var(--ac)} .kpi.g .v{color:var(--ok)} .kpi.w .v{color:var(--warn)}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;max-width:1180px;margin:0 auto;padding:0 18px}
+  .filtros{max-width:1180px;margin:6px auto 4px;padding:10px 18px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+  .filtros .grupo{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .filtros .lab{font-size:11px;color:var(--tx2);text-transform:uppercase;letter-spacing:.6px;margin-right:2px}
+  .chip{border:1px solid var(--line);border-radius:999px;padding:4px 13px;font-size:13px;color:var(--tx);background:transparent;cursor:pointer;user-select:none}
+  .chip:hover{border-color:var(--ac)}
+  .chip.on{background:var(--ac);color:#04101e;font-weight:700;border-color:var(--ac)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;max-width:1180px;margin:12px auto;padding:0 18px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px 8px}
   .card h3{margin:0 0 8px;font-size:14px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.6px}
   svg{display:block;width:100%;height:auto}
+  .rankwrap{max-width:1180px;margin:12px auto;padding:0 18px}
+  .rankcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:10px}
+  .rk{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;position:relative}
+  .rk .pos{font-size:20px;font-weight:800;margin-right:6px}
+  .rk .score{position:absolute;top:10px;right:12px;background:var(--card2);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:13px;font-weight:700;color:var(--ok)}
+  .rk .tit{font-size:14px;font-weight:600;margin:6px 0 2px}
+  .rk .spec{font-size:12.5px;color:var(--tx2)}
+  .rk .com{font-size:12.5px;margin-top:7px;color:var(--warn);font-style:italic}
+  .rk.medalla{border-color:#3c4a75}
   .tbl-card{max-width:1180px;margin:14px auto 30px;padding:0 18px}
   table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;font-size:14px}
   thead th{background:var(--card2);color:var(--tx2);text-align:left;padding:10px 12px;font-size:12px;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;user-select:none;white-space:nowrap}
   thead th:hover{color:var(--ac)}
   tbody td{padding:9px 12px;border-top:1px solid var(--line);vertical-align:top}
   tbody tr:hover{background:#182138}
+  tr.sec td{background:var(--card2);color:var(--ac);font-weight:700;font-size:13px;letter-spacing:.5px;padding:7px 12px}
   td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
   a{color:var(--ac);text-decoration:none}
   a:hover{text-decoration:underline}
   .mini{font-size:12px;color:var(--tx2)}
   .tag{display:inline-block;border:1px solid var(--line);border-radius:8px;padding:0 7px;font-size:12px;color:var(--tx2);margin-left:6px}
   .nuevo{color:var(--ok);font-weight:700} .baja{color:var(--warn);font-weight:700}
+  .rkn{display:inline-block;background:#1f2c48;border-radius:7px;padding:0 6px;font-size:11.5px;font-weight:700;color:var(--warn);margin-right:5px}
   footer{max-width:1180px;margin:0 auto 40px;padding:0 18px;color:var(--tx2);font-size:12px}
-  .tooltip{position:fixed;background:#1c2742;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;pointer-events:none;display:none;z-index:9;max-width:260px}
 </style>
 </head>
 <body>
@@ -49,6 +65,13 @@
 
 <div class="kpis" id="kpis"></div>
 
+<div class="filtros card">
+  <div class="grupo" id="fCV"><span class="lab">Potencia</span></div>
+  <div class="grupo" id="fTrim"><span class="lab">Acabado</span></div>
+  <div class="grupo" id="fVista"><span class="lab">Vista</span></div>
+  <div class="grupo" id="fReset"></div>
+</div>
+
 <div class="grid">
   <div class="card"><h3>Distribución de precios</h3><div id="c1"></div></div>
   <div class="card"><h3>Precio vs kilometraje</h3><div id="c2"></div></div>
@@ -57,6 +80,8 @@
   <div class="card"><h3>Coches nuevos por día 🆕</h3><div id="c5"></div></div>
   <div class="card"><h3>Precio medio del inventario 📈</h3><div id="c6"></div></div>
 </div>
+
+<div class="rankwrap card" id="rankSec" style="padding-bottom:14px"></div>
 
 <div class="tbl-card card" style="padding:0;overflow-x:auto">
   <table id="tbl">
@@ -69,7 +94,6 @@
 </div>
 
 <footer id="foot"></footer>
-<div class="tooltip" id="tip"></div>
 
 <script>
 const DATA = /*DATOS*/null;
@@ -77,34 +101,75 @@ const DATA = /*DATOS*/null;
 const fmtE = n => n==null ? '—' : n.toLocaleString('es-ES') + ' €';
 const fmtN = n => n==null ? '—' : n.toLocaleString('es-ES');
 const esc = s => (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-
 function svgEl(w,h){ return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">`; }
 
-/* ─── KPIs ─── */
-function kpis(d){
-  const I = d.inventario;
-  const precios = I.map(c=>c.precio).sort((a,b)=>a-b);
-  const med = precios.length ? precios[Math.floor(precios.length/2)] : null;
-  const kmMed = I.length ? Math.round(I.reduce((s,c)=>s+(c.km||0),0)/I.length) : null;
-  const hace2 = new Date(Date.now()-2*864e5).toISOString().slice(0,10);
-  const recientes = I.filter(c=>c.visto>=hace2).length;
-  document.getElementById('kpis').innerHTML = [
-    ['a', I.length, 'coches en inventario'],
-    ['', d.anuncios, 'anuncios (con multilistings)'],
-    ['g', fmtE(precios[0]), 'el más barato'],
-    ['a', fmtE(med), 'precio mediano'],
-    ['', fmtN(kmMed)+' km', 'km medios'],
-    ['g', recientes, 'vistos últimas 48 h'],
-    ['w', d.rebajas, 'rebajas en la última tirada'],
-  ].map(k=>`<div class="kpi ${k[0]}"><div class="v">${k[1]}</div><div class="l">${k[2]}</div></div>`).join('');
-  document.getElementById('sub').innerHTML =
-    `Toyota Corolla Touring Sports · <b>${d.config}</b> · ${I.length} coches · actualizado ${esc(d.actualizado)}`;
+/* ─── acabados ─── */
+const TRIMS = [['GR Sport',/gr ?sport/i],['Advance Luxury',/advance luxury/i],['Advance',/advance/i],
+  ['Style Edition',/style edition/i],['Style',/style/i],['Active Tech',/active tech/i],
+  ['Active Plus',/active plus/i],['Active',/active/i],['Business',/business/i]];
+const trimDe = t => { for(const [n,re] of TRIMS) if(re.test(t)) return n; return 'Otro'; };
+
+/* ─── estado de filtros ─── */
+let F = {cv:'all', trim:'all', vista:'lista'};
+
+function filtrar(){
+  return DATA.inventario.filter(c =>
+    (F.cv==='all' || c.cv===+F.cv) && (F.trim==='all' || trimDe(c.titulo)===F.trim));
 }
 
-/* ─── 1. histograma precios ─── */
-function c1(d){
-  const P = d.inventario.map(c=>c.precio).filter(p=>p>0);
-  if(!P.length){document.getElementById('c1').innerHTML='<p class=mini>sin datos</p>';return}
+/* ─── ranking: IA o heurístico ─── */
+function mapaRanking(){
+  if (DATA.rankingIA && DATA.rankingIA.ranking){
+    const m = {};
+    DATA.rankingIA.ranking.forEach((r,i)=>m[r.id]={pos:i+1, score:r.score, com:r.comentario});
+    return {m, ia:true, fecha:DATA.rankingIA.fecha, modelo:DATA.rankingIA.ia};
+  }
+  // heurístico: precio vs regresión km dentro de cada grupo de CV
+  const byCv = {};
+  DATA.inventario.forEach(c => (byCv[c.cv]=byCv[c.cv]||[]).push(c));
+  const m = {};
+  Object.values(byCv).forEach(g=>{
+    const n=g.length, xs=g.map(c=>c.km||0), ys=g.map(c=>c.precio);
+    const mx=xs.reduce((a,b)=>a+b,0)/n, my=ys.reduce((a,b)=>a+b,0)/n;
+    let num=0,den=0; g.forEach((c,i)=>{num+=(xs[i]-mx)*(ys[i]-my); den+=(xs[i]-mx)**2;});
+    const a=den?num/den:0, b=my-a*mx;
+    const res=ys.map((y,i)=>y-(a*xs[i]+b));
+    const sd=Math.sqrt(res.reduce((s,r)=>s+r*r,0)/n)||1;
+    g.forEach((c,i)=>{
+      let s=50-(res[i]/sd)*15 + (parseFloat(c.rating)>=4.5?3:0);
+      m[c.id]={pos:0, score:Math.max(2,Math.min(98,Math.round(s)))};
+    });
+  });
+  const top = Object.entries(m).sort((x,y)=>y[1].score-x[1].score).slice(0,12)
+    .map(([id])=>id);
+  top.forEach((id,i)=>m[id].pos=i+1);
+  return {m, ia:false};
+}
+let RANK = null;
+
+/* ─── KPIs ─── */
+function kpis(I){
+  const P = I.map(c=>c.precio).sort((a,b)=>a-b);
+  const med = P.length ? P[Math.floor(P.length/2)] : null;
+  const kmMed = I.length ? Math.round(I.reduce((s,c)=>s+(c.km||0),0)/I.length) : null;
+  const hace2 = new Date(Date.now()-2*864e5).toISOString().slice(0,10);
+  const anuncios = I.reduce((s,c)=>s+(c.n||1),0);
+  document.getElementById('kpis').innerHTML = [
+    ['a', I.length, 'coches (filtrados)'],
+    ['', anuncios, 'anuncios con multilistings'],
+    ['g', fmtE(P[0]), 'el más barato'],
+    ['a', fmtE(med), 'precio mediano'],
+    ['', fmtN(kmMed)+' km', 'km medios'],
+    ['g', I.filter(c=>c.visto>=hace2).length, 'vistos últimas 48 h'],
+    ['w', DATA.rebajas, 'rebajas última tirada'],
+  ].map(k=>`<div class="kpi ${k[0]}"><div class="v">${k[1]}</div><div class="l">${k[2]}</div></div>`).join('');
+}
+
+/* ─── gráficos ─── */
+function c1(I){
+  const P = I.map(c=>c.precio).filter(p=>p>0);
+  const box=document.getElementById('c1');
+  if(!P.length){box.innerHTML='<p class=mini>sin coches con estos filtros</p>';return}
   const min=Math.min(...P), max=Math.max(...P), paso=Math.max(1000, Math.round((max-min)/9/500)*500);
   const b0=Math.floor(min/paso)*paso, nb=Math.ceil((max-b0)/paso)+1;
   const bins=new Array(nb).fill(0);
@@ -118,17 +183,16 @@ function c1(d){
   });
   s+=`<line x1=8 y1=${H-pad} x2=${W-8} y2=${H-pad} stroke=#26304d/>`;
   for(let i=0;i<nb;i+=Math.ceil(nb/6))s+=`<text x=${10+i*bw+bw/2} y=${H-pad+14} fill=#9aa7bd font-size=9 text-anchor=middle>${((b0+i*paso)/1000).toFixed(0)}k</text>`;
-  s+='</svg>';
-  document.getElementById('c1').innerHTML=s;
+  box.innerHTML=s+'</svg>';
 }
 
-/* ─── 2. scatter precio vs km ─── */
-function c2(d){
-  const I=d.inventario.filter(c=>c.km!=null);
-  if(!I.length){document.getElementById('c2').innerHTML='<p class=mini>sin datos</p>';return}
+function c2(I){
+  const J=I.filter(c=>c.km!=null);
+  const box=document.getElementById('c2');
+  if(!J.length){box.innerHTML='<p class=mini>sin coches con estos filtros</p>';return}
   const W=420,H=220,px=44,py=24;
-  const mkm=Math.max(...I.map(c=>c.km)), mp=Math.max(...I.map(c=>c.precio));
-  const yrs=I.map(c=>c.anyo), y0=Math.min(...yrs), y1=Math.max(...yrs);
+  const mkm=Math.max(...J.map(c=>c.km)), mp=Math.max(...J.map(c=>c.precio));
+  const yrs=J.map(c=>c.anyo), y0=Math.min(...yrs), y1=Math.max(...yrs);
   const col=y=>{const t=(y-y0)/Math.max(1,y1-y0);return `hsl(${210-160*t} 80% ${62-10*t}%)`};
   const X=km=>px+(W-px-10)*(km/mkm), Y=p=>H-py-12-(H-py-34)*(p/mp);
   let s=svgEl(W,H);
@@ -138,20 +202,21 @@ function c2(d){
     s+=`<line x1=${X(mkm*g)} y1=${H-py-12} x2=${X(mkm*g)} y2=${12} stroke=#1d2740 stroke-dasharray=3 4/>`+
        `<text x=${X(mkm*g)} y=${H-py+2} fill=#9aa7bd font-size=9 text-anchor=middle>${Math.round(mkm*g/1000)}k</text>`;
   }
-  I.forEach(c=>{
+  J.forEach(c=>{
     s+=`<circle cx=${X(c.km)} cy=${Y(c.precio)} r=5.5 fill="${col(c.anyo)}" stroke=#0b1020 stroke-width=1.5 opacity=.92>`+
        `<title>${esc(c.titulo)}\n${fmtE(c.precio)} · ${fmtN(c.km)} km · ${c.anyo} · ${c.cv} CV\n${esc(c.lugares)}</title></circle>`;
   });
   s+=`<text x=${W-8} y=${12} fill=#9aa7bd font-size=9 text-anchor=end>€ ↑ · km → · color = año (${y0}–${y1})</text></svg>`;
-  document.getElementById('c2').innerHTML=s;
+  box.innerHTML=s;
 }
 
-/* ─── 3. por potencia ─── */
-function c3(d){
+function c3(I){
+  const box=document.getElementById('c3');
+  if(!I.length){box.innerHTML='<p class=mini>sin coches con estos filtros</p>';return}
   const M={};
-  d.inventario.forEach(c=>{ (M[c.cv]=M[c.cv]||[]).push(c.precio) });
+  I.forEach(c=>{ (M[c.cv]=M[c.cv]||[]).push(c.precio) });
   const filas=Object.entries(M).map(([cv,ps])=>({cv:+cv,n:ps.length,
-    min:Math.min(...ps), med:ps.sort((a,b)=>a-b)[Math.floor(ps.length/2)]})).sort((a,b)=>a.cv-b.cv);
+    med:ps.sort((a,b)=>a-b)[Math.floor(ps.length/2)]})).sort((a,b)=>a.cv-b.cv);
   const W=420,H=filas.length*46+16, mx=Math.max(...filas.map(f=>f.n));
   let s=svgEl(W,H), y=6;
   filas.forEach(f=>{
@@ -159,17 +224,17 @@ function c3(d){
     s+=`<text x=0 y=${y+14} fill=#e6edf3 font-size=12>${f.cv} CV</text>`+
        `<rect x=52 y=${y+2} width=${w} height=18 rx=4 fill=#7ee787 opacity=.75><title>${f.n} coches</title></rect>`+
        `<text x=${56+w} y=${y+15} fill=#9aa7bd font-size=11>${f.n}</text>`+
-       `<text x=${W-2} y=${y+15} fill=#9aa7bd font-size=10 text-anchor=end>med ${fmtE(f.med)} · mín ${fmtE(f.min)}</text>`;
+       `<text x=${W-2} y=${y+15} fill=#9aa7bd font-size=10 text-anchor=end>medio ${fmtE(f.med)}</text>`;
     y+=46;
   });
-  s+='</svg>';
-  document.getElementById('c3').innerHTML=s;
+  box.innerHTML=s+'</svg>';
 }
 
-/* ─── 4. por año ─── */
-function c4(d){
+function c4(I){
+  const box=document.getElementById('c4');
+  if(!I.length){box.innerHTML='<p class=mini>sin coches con estos filtros</p>';return}
   const M={};
-  d.inventario.forEach(c=>M[c.anyo]=(M[c.anyo]||0)+1);
+  I.forEach(c=>M[c.anyo]=(M[c.anyo]||0)+1);
   const E=Object.entries(M).sort((a,b)=>a[0]-b[0]);
   const W=420,H=200,pad=30,bw=(W-20)/E.length,mx=Math.max(...E.map(e=>e[1]));
   let s=svgEl(W,H);
@@ -180,13 +245,12 @@ function c4(d){
        `<text x=${x+bw/2} y=${H-pad+14} fill=#9aa7bd font-size=10 text-anchor=middle>${(''+a).slice(2)}</text>`;
   });
   s+=`<line x1=8 y1=${H-pad} x2=${W-8} y2=${H-pad} stroke=#26304d/></svg>`;
-  document.getElementById('c4').innerHTML=s;
+  box.innerHTML=s;
 }
 
-/* ─── 5. nuevos por día ─── */
-function c5(d){
+function c5(I){
   const M={};
-  d.inventario.forEach(c=>{ if(c.publicado) M[c.publicado]=(M[c.publicado]||0)+1 });
+  I.forEach(c=>{ if(c.publicado) M[c.publicado]=(M[c.publicado]||0)+1 });
   const hoy=new Date().toISOString().slice(0,10);
   const dias=[];
   for(let i=20;i>=0;i--){const f=new Date(Date.now()-i*864e5).toISOString().slice(0,10);dias.push([f,M[f]||0])}
@@ -201,10 +265,10 @@ function c5(d){
   document.getElementById('c5').innerHTML=s;
 }
 
-/* ─── 6. precio medio histórico ─── */
-function c6(d){
-  const Hs=d.historico||[];
-  if(Hs.length<2){document.getElementById('c6').innerHTML='<p class=mini>se dibujará a partir de la 2ª tirada 📊</p>';return}
+function c6(){
+  const Hs=DATA.historico||[];
+  const box=document.getElementById('c6');
+  if(Hs.length<2){box.innerHTML='<p class=mini>se dibujará a partir de la 2ª tirada 📊 (global, sin filtros)</p>';return}
   const W=420,H=190,pad=34;
   const ps=Hs.map(h=>h.precio), mn=Math.min(...ps), mx=Math.max(...ps);
   const X=i=>36+(W-46)*(i/(Hs.length-1)), Y=p=>H-pad+4-(H-pad-16)*((p-mn)/Math.max(1,mx-mn));
@@ -217,39 +281,110 @@ function c6(d){
   const last=Hs[Hs.length-1];
   s+=`<circle cx=${X(Hs.length-1)} cy=${Y(last.precio)} r=4 fill=#ffb86c><title>${last.fecha}: ${fmtE(last.precio)} (${last.coches} coches)</title></circle>`;
   s+=`<text x=${W-6} y=14 fill=#9aa7bd font-size=9 text-anchor=end>${fmtE(last.precio)} · ${last.coches} coches</text></svg>`;
-  document.getElementById('c6').innerHTML=s;
+  box.innerHTML=s;
+}
+
+/* ─── ranking ─── */
+function rankingSec(I){
+  const box=document.getElementById('rankSec');
+  const conPos = I.filter(c=>RANK.m[c.id] && RANK.m[c.id].pos);
+  conPos.sort((a,b)=>RANK.m[a.id].pos-RANK.m[b.id].pos);
+  const med=['🥇','🥈','🥉'];
+  let head;
+  if(RANK.ia){
+    head = `🏆 Ranking IA <span class="tag" style="margin-left:4px">${esc(RANK.modelo)} · GitHub Models</span>`;
+  }else{
+    head = `🏆 Ranking automático <span class="tag" style="margin-left:4px">heurístico precio vs km/año</span>`;
+  }
+  let html = `<h3>${head}</h3>
+    <p class="mini" style="margin:0 0 10px">${conPos.length?`${conPos.length} coches del ranking pasan los filtros actuales`:'ningún coche del ranking pasa los filtros'} · puntuación 0-100 sobre calidad/precio</p>
+    <div class="rankcards">`;
+  conPos.slice(0,12).forEach(c=>{
+    const r=RANK.m[c.id];
+    const pos = r.pos<=3 ? med[r.pos-1] : `#${r.pos}`;
+    html += `<div class="rk ${r.pos<=3?'medalla':''}">
+      <span class="pos">${pos}</span><span class="score">${r.score}</span>
+      <div class="tit"><a href="${c.url}">${esc(c.titulo)}</a>${c.n>1?` <span class=tag>×${c.n}</span>`:''}</div>
+      <div class="spec">${fmtE(c.precio)} · ${c.anyo} · ${fmtN(c.km)} km · ${c.cv} CV · ${esc(c.lugares)}${c.rating?` · ⭐${c.rating}`:''}</div>
+      ${r.com?`<div class="com">“${esc(r.com)}”</div>`:''}
+    </div>`;
+  });
+  html+='</div>';
+  box.innerHTML=html;
 }
 
 /* ─── tabla ─── */
 let orden={k:'precio',asc:true};
-function tabla(d){
+function filaCoche(c){
+  const extra=c.urls.slice(1).map((u,i)=>` <a href="${u}">·${i+2}ª</a>`).join('');
+  const marks=(c.nuevo?'<span class=nuevo>🆕</span> ':'')+(c.rebajado?'<span class=baja>📉</span> ':'')+(c.n>1?`<span class=tag>×${c.n}</span>`:'');
+  const r=RANK.m[c.id];
+  const badge=(r&&r.pos)?`<span class=rkn title="puntuación ${r.score}">🏆${r.pos}</span>`:'';
+  return `<tr><td class=num><b>${fmtE(c.precio)}</b></td><td class=num>${c.anyo}</td><td class=num>${fmtN(c.km)}</td>`+
+    `<td class=num>${c.cv}</td><td>${badge}<a href="${c.url}">${esc(c.titulo)}</a>${extra} ${marks}<div class=mini>${trimDe(c.titulo)}${c.publicado?' · publicado '+c.publicado:''}</div></td>`+
+    `<td>${esc(c.lugares)}</td><td class=mini>${esc(c.vendedor||'—')}${c.rating?' ⭐'+c.rating:''}</td><td class=mini>${c.visto}</td></tr>`;
+}
+function tabla(I){
   const tb=document.querySelector('#tbl tbody');
-  function paint(){
-    const rows=[...d.inventario].sort((a,b)=>{
-      const A=a[orden.k],B=b[orden.k];
-      return (typeof A=='number'?A-B:(''+A).localeCompare(''+B))*(orden.asc?1:-1);
-    });
-    tb.innerHTML=rows.map(c=>{
-      const extra=c.urls.slice(1).map((u,i)=>` <a href="${u}">·${i+2}ª</a>`).join('');
-      const marks=(c.nuevo?'<span class=nuevo>🆕</span> ':'')+(c.rebajado?'<span class=baja>📉</span> ':'')+(c.n>1?`<span class=tag>×${c.n}</span>`:'');
-      return `<tr><td class=num><b>${fmtE(c.precio)}</b></td><td class=num>${c.anyo}</td><td class=num>${fmtN(c.km)}</td>`+
-        `<td class=num>${c.cv}</td><td><a href="${c.url}">${esc(c.titulo)}</a>${extra} ${marks}<div class=mini>${c.tipo}${c.publicado?' · publicado '+c.publicado:''}</div></td>`+
-        `<td>${esc(c.lugares)}</td><td class=mini>${esc(c.vendedor||'—')}</td><td class=mini>${c.visto}</td></tr>`;
-    }).join('');
+  let html='';
+  if(F.vista==='lista'){
+    const rows=[...I].sort((a,b)=>{const A=a[orden.k],B=b[orden.k];return(typeof A=='number'?A-B:(''+A).localeCompare(''+B))*(orden.asc?1:-1)});
+    html=rows.map(filaCoche).join('');
+  }else{
+    const clave = F.vista==='cv' ? c=>c.cv+' CV' : c=>trimDe(c.titulo);
+    const grupos={};
+    I.forEach(c=>{const k=clave(c);(grupos[k]=grupos[k]||[]).push(c)});
+    Object.entries(grupos)
+      .sort((a,b)=>F.vista==='cv'?parseInt(a[0])-parseInt(b[0]):a[0].localeCompare(b[0]))
+      .forEach(([k,g])=>{
+        html+=`<tr class=sec><td colspan=8>${F.vista==='cv'?'⚡':'🚘'} ${esc(k)} · ${g.length} coches · desde ${fmtE(Math.min(...g.map(c=>c.precio)))}</td></tr>`;
+        html+=[...g].sort((a,b)=>a.precio-b.precio).map(filaCoche).join('');
+      });
   }
-  document.querySelectorAll('#tbl th[data-k]').forEach(th=>{
-    th.addEventListener('click',()=>{const k=th.dataset.k;orden=orden.k===k?{k,asc:!orden.asc}:{k,asc:true};paint()});
-  });
-  paint();
+  tb.innerHTML=html||'<tr><td colspan=8 class=mini style="padding:20px">sin coches con estos filtros</td></tr>';
 }
 
+/* ─── filtros UI ─── */
+function chip(txt,on,fn){const b=document.createElement('button');b.className='chip'+(on?' on':'');b.textContent=txt;b.onclick=fn;return b}
+function construirFiltros(){
+  const cvs=[...new Set(DATA.inventario.map(c=>c.cv))].sort((a,b)=>a-b);
+  const g1=document.getElementById('fCV');
+  g1.appendChild(chip('Todos',F.cv==='all',()=>{F.cv='all';refresco()}));
+  cvs.forEach(v=>g1.appendChild(chip(v+' CV',F.cv===v,()=>{F.cv=v;refresco()})));
+  const trims=[...new Set(DATA.inventario.map(c=>trimDe(c.titulo)))].sort((a,b)=>a.localeCompare(b));
+  const g2=document.getElementById('fTrim');
+  g2.appendChild(chip('Todos',F.trim==='all',()=>{F.trim='all';refresco()}));
+  trims.forEach(t=>g2.appendChild(chip(t,F.trim===t,()=>{F.trim=t;refresco()})));
+  const g3=document.getElementById('fVista');
+  [['lista','📋 Lista'],['cv','⚡ Por CV'],['acabado','🚘 Por acabado']].forEach(([v,t])=>
+    g3.appendChild(chip(t,F.vista===v,()=>{F.vista=v;refresco()})));
+  const g4=document.getElementById('fReset');
+  g4.appendChild(chip('✕ limpiar',false,()=>{F={cv:'all',trim:'all',vista:'lista'};refresco()}));
+}
+function refresco(){
+  document.querySelectorAll('#fCV .chip').forEach((b,i)=>b.classList.toggle('on', i===0?F.cv==='all':F.cv===+b.textContent.replace(' CV','')));
+  const trims=[...new Set(DATA.inventario.map(c=>trimDe(c.titulo)))].sort((a,b)=>a.localeCompare(b));
+  document.querySelectorAll('#fTrim .chip').forEach((b,i)=>b.classList.toggle('on', i===0?F.trim==='all':F.trim===trims[i-1]));
+  const vistas=['lista','cv','acabado'];
+  document.querySelectorAll('#fVista .chip').forEach((b,i)=>b.classList.toggle('on',F.vista===vistas[i]));
+  const I=filtrar();
+  kpis(I);c1(I);c2(I);c3(I);c4(I);c5(I);c6();rankingSec(I);tabla(I);
+}
+
+/* ─── arranque ─── */
 if(DATA){
-  kpis(DATA);c1(DATA);c2(DATA);c3(DATA);c4(DATA);c5(DATA);c6(DATA);tabla(DATA);
-  document.getElementById('foot').innerHTML=
-    `Hecho con 💙 por tu scraper (GitHub Actions · 2 tiradas/día) · fuente: coches.net · `+
-    `el inventario acumula lo visto en los últimos 14 días · los multilistings se agrupan (×N)`;
+  RANK = mapaRanking();
+  document.getElementById('sub').innerHTML =
+    `Toyota Corolla Touring Sports · <b>${DATA.config}</b> · ${DATA.inventario.length} coches · actualizado ${esc(DATA.actualizado)}`;
+  construirFiltros();
+  document.querySelectorAll('#tbl th[data-k]').forEach(th=>{
+    th.addEventListener('click',()=>{const k=th.dataset.k;orden=orden.k===k?{k,asc:!orden.asc}:{k,asc:true};refresco()});
+  });
+  refresco();
+  document.getElementById('foot').innerHTML =
+    `Hecho con 💙 por tu scraper (GitHub Actions · 2 tiradas/día) · fuente: coches.net · ranking ${RANK.ia?'por IA ('+esc(RANK.modelo)+')':'heurístico — la IA se activa sola en cuanto esté disponible'} · multilistings agrupados (×N)`;
 }else{
-  document.getElementById('sub').textContent='⚠️ sin datos: este fichero se genera automáticamente en cada tirada del scraper';
+  document.getElementById('sub').textContent='⚠️ sin datos: este fichero se genera en cada tirada del scraper';
 }
 </script>
 </body>

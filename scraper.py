@@ -15,6 +15,7 @@ import datetime as dt
 import gzip
 import io
 import json
+import os
 import random
 import re
 import shutil
@@ -238,6 +239,53 @@ def fmt_row(a: dict) -> str:
             f"     🔗 {a['url']}")
 
 
+MODELO_IA = "openai/gpt-4o-mini"
+URL_IA = "https://models.github.ai/inference/chat/completions"
+
+
+def ai_ranking(coches: list, now_iso: str):
+    """Pide a GitHub Models (IA gratuita de GitHub, vía GITHUB_TOKEN del workflow)
+    un ranking de mejores oportunidades. Devuelve None si no hay token o falla."""
+    tok = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if not tok or not coches:
+        return None
+    lineas = ["id|precio|año|km|CV|versión|lugar|vendedor|valoración"]
+    for c in coches[:80]:
+        lineas.append(f"{c['id']}|{c['precio']}€|{c['anyo']}|{c['km']}|{c['cv']}|"
+                      f"{c['titulo'][:48]}|{c['lugares'][:28]}|{(c.get('vendedor') or '')[:22]}|"
+                      f"{c.get('rating') or '-'}")
+    sysmsg = ("Eres un experto en coches de ocasión Toyota Corolla Touring Sports híbridos. "
+              "Respondes SOLO con JSON válido, sin texto adicional.")
+    usrmsg = ("Analiza este inventario y haz un ranking de las 12 MEJORES oportunidades "
+              "calidad/precio (ten en cuenta precio vs km y año, potencia, acabado, "
+              "reputación del vendedor y coherencia del anuncio). Formato exacto:\n"
+              '{"ranking":[{"id":"<id>","score":<0-100>,"comentario":"máx 85 caracteres, concreto"}]}\n'
+              "Inventario:\n" + "\n".join(lineas))
+    payload = json.dumps({
+        "model": MODELO_IA, "temperature": 0.2, "max_tokens": 1300,
+        "messages": [{"role": "system", "content": sysmsg},
+                     {"role": "user", "content": usrmsg}]}).encode()
+    req = urllib.request.Request(URL_IA, data=payload, headers={
+        "Authorization": f"Bearer {tok}", "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=90) as resp:
+            out = json.loads(resp.read().decode("utf-8", "ignore"))
+        contenido = out["choices"][0]["message"]["content"].strip()
+        contenido = re.sub(r"^```(json)?|```$", "", contenido.strip(), flags=re.M).strip()
+        ranking = json.loads(contenido).get("ranking", [])
+        ids_validos = {c["id"] for c in coches}
+        ranking = [{"id": str(r.get("id", "")), "score": int(r.get("score", 50)),
+                    "comentario": str(r.get("comentario", ""))[:100]}
+                   for r in ranking if str(r.get("id")) in ids_validos][:12]
+        if not ranking:
+            return None
+        log(f"✔ Ranking IA generado ({MODELO_IA}, {len(ranking)} coches)")
+        return {"fecha": now_iso, "ia": MODELO_IA, "ranking": ranking}
+    except Exception as exc:  # noqa: BLE001 — la IA nunca debe romper el scraper
+        log(f"⚠ Ranking IA no disponible ({str(exc)[:90]}) — el dashboard usará el heurístico")
+        return None
+
+
 def write_site(inv_groups, inv_ads_count, new_group_ids, drop_group_ids, now_iso) -> None:
     """Genera docs/index.html (dashboard) inyectando los datos en docs/plantilla.html."""
     import statistics
@@ -268,18 +316,22 @@ def write_site(inv_groups, inv_ads_count, new_group_ids, drop_group_ids, now_iso
                 pass
 
     inventario = [{
-        "precio": g[0]["price"], "anyo": g[0].get("year"), "km": g[0].get("km"),
+        "id": g[0].get("id", ""), "precio": g[0]["price"], "anyo": g[0].get("year"), "km": g[0].get("km"),
         "cv": g[0].get("hp"), "titulo": g[0].get("title", ""), "url": g[0].get("url", ""),
         "urls": [a.get("url", "") for a in g], "n": len(g), "lugares": places_cell(g),
         "tipo": g[0].get("tipo", ""), "visto": max(x.get("last_seen", "") for x in g),
-        "publicado": g[0].get("published", ""), "vendedor": g[0].get("seller_name") or g[0].get("seller_type", ""),
+        "publicado": g[0].get("published", ""),
+        "vendedor": g[0].get("seller_name") or g[0].get("seller_type", ""),
+        "rating": g[0].get("seller_rating", ""),
         "nuevo": any(x["id"] in new_group_ids for x in g),
         "rebajado": any(x["id"] in drop_group_ids for x in g),
     } for g in inv_groups]
 
+    ranking = ai_ranking(inventario, now_iso)
+
     datos = {"actualizado": now_iso, "config": f"≥{MIN_YEAR} · ≥{MIN_HP} CV",
              "anuncios": inv_ads_count, "rebajas": len(drop_group_ids),
-             "inventario": inventario, "historico": historico}
+             "inventario": inventario, "historico": historico, "rankingIA": ranking}
     html = plantilla.read_text(encoding="utf-8").replace(
         "/*DATOS*/null", json.dumps(datos, ensure_ascii=False))
     (site_dir / "index.html").write_text(html, encoding="utf-8")
