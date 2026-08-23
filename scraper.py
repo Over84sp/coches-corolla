@@ -238,6 +238,40 @@ def fmt_row(a: dict) -> str:
             f"     🔗 {a['url']}")
 
 
+def car_key(a: dict):
+    """Clave de 'mismo coche físico': los concesionarios publican el mismo vehículo
+    en varias sucursales (multilisting) con IDs y hasta precios distintos."""
+    return ((a.get("title") or "").strip().lower(), a.get("year"), a.get("km"), a.get("hp"))
+
+
+def group_cars(ads: list) -> list:
+    """Agrupa anuncios del mismo coche. Devuelve grupos ordenados por precio."""
+    groups = {}
+    for a in ads:
+        groups.setdefault(car_key(a), []).append(a)
+    return [sorted(g, key=lambda x: x["price"]) for g in groups.values()]
+
+
+def links_cell(g: list) -> str:
+    """Celda de título de un grupo: [título](url1) · [2ª](url2) · [3ª](url3)..."""
+    cell = f"[{g[0]['title']}]({g[0]['url']})"
+    for i, a in enumerate(g[1:], 2):
+        cell += f" · [{i}ª]({a['url']})"
+    return cell
+
+
+def places_cell(g: list) -> str:
+    seen, out = set(), []
+    for a in g:
+        p = f"{a.get('city', '')} ({a.get('province', '')})".strip()
+        if p and p not in seen:
+            seen.add(p)
+            out.append(p)
+    if not out:
+        return ""
+    return out[0] + (f" +{len(out) - 1} más" if len(out) > 2 else (f" / {out[1]}" if len(out) > 1 else ""))
+
+
 def main() -> int:
     now_iso = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     log(f"═══ coches.net · Corolla Touring Sports ≥{MIN_YEAR} · ≥{MIN_HP} CV · {now_iso} ═══")
@@ -277,76 +311,97 @@ def main() -> int:
         merged[k] = e
     merged = {k: v for k, v in merged.items() if v["last_seen"] >= prune_cutoff}
 
-    new_ads, price_drops = [], []
+    prior_prices = {k: v.get("price") for k, v in merged.items()}
+    prior_ids = set(merged.keys())
+
+    new_ads = []          # por ID (para CSV/estado)
     for a in matched:
-        prev = merged.get(a["id"])
-        if prev is None:
+        if a["id"] not in prior_ids:
             new_ads.append(a)
-        elif prev.get("price") is not None and a["price"] is not None and a["price"] < prev["price"]:
-            price_drops.append((a, prev["price"]))
         a2 = {k: v for k, v in a.items() if k != "first_seen"}
         a2["last_seen"] = today
         merged[a["id"]] = a2
 
+    # Grupos de "mismo coche físico" (multilistings de concesionario)
+    cur_groups = group_cars(matched)
+    new_groups = [g for g in cur_groups if not any(a["id"] in prior_ids for a in g)]
+    drop_groups = []      # (grupo, precio_mínimo_anterior)
+    for g in cur_groups:
+        olds = [prior_prices[a["id"]] for a in g
+                if a["id"] in prior_prices and prior_prices[a["id"]] is not None]
+        if olds and g[0]["price"] is not None and g[0]["price"] < min(olds):
+            drop_groups.append((g, min(olds)))
+
     save_state(merged, new_ads)
 
     log("")
-    if new_ads:
-        log(f"🆕 ANUNCIOS NUEVOS ({len(new_ads)}):")
-        for a in sorted(new_ads, key=lambda x: x["price"]):
-            log(fmt_row(a))
+    if new_groups:
+        tot = sum(len(g) for g in new_groups)
+        log(f"🆕 COCHES NUEVOS ({len(new_groups)} coches · {tot} anuncios):")
+        for g in sorted(new_groups, key=lambda g: g[0]["price"]):
+            log(f"  💶 {g[0]['price']:,} € · {g[0]['year']} · {g[0]['km']:,} km · "
+                f"{g[0]['hp']} CV · {g[0]['province']}")
+            for a in g:
+                log(f"     {'   └ ' if len(g) > 1 else ''}{a['price']:,} € · {a['city']} — "
+                    f"{a['seller_name'] or a['seller_type']} · {a['url']}")
     else:
-        log("🆕 Sin anuncios nuevos desde la última ejecución.")
+        log("🆕 Sin coches nuevos desde la última ejecución.")
 
-    if price_drops:
-        log(f"\n📉 REBAJAS ({len(price_drops)}):")
-        for a, old_price in sorted(price_drops, key=lambda x: x[0]["price"]):
-            log(f"  {a['title']}\n     💶 {old_price:,} € → {a['price']:,} € "
-                f"({a['year']} · {a['km']:,} km · {a['province']})\n     🔗 {a['url']}")
+    if drop_groups:
+        log(f"\n📉 REBAJAS ({len(drop_groups)} coches):")
+        for g, old_min in sorted(drop_groups, key=lambda x: x[0][0]["price"]):
+            log(f"  {g[0]['title']}\n     💶 {old_min:,} € → {g[0]['price']:,} € "
+                f"({g[0]['year']} · {g[0]['km']:,} km · {places_cell(g)})\n     🔗 {g[0]['url']}")
 
     # Resumen para GitHub Actions (job summary) — novedades + rebajas + inventario completo
     summary = Path(__file__).resolve().parent / "resumen.md"
+    n_new_anuncios = sum(len(g) for g in new_groups)
     lines = [f"# Corolla TS ≥{MIN_YEAR} · ≥{MIN_HP} CV — {now_iso}",
-             f"Descargados: **{len(raw_ads)}** · Tras filtros: **{len(matched)}** · "
-             f"Nuevos: **{len(new_ads)}** · Rebajas: **{len(price_drops)}**", ""]
-    if new_ads:
-        lines += [f"## 🆕 Nuevos ({len(new_ads)})", "",
+             f"Descargados: **{len(raw_ads)}** · Tras filtros: **{len(matched)}** anuncios · "
+             f"Nuevos: **{len(new_groups)}** coches ({n_new_anuncios} anuncios) · "
+             f"Rebajas: **{len(drop_groups)}**", ""]
+    if new_groups:
+        lines += [f"## 🆕 Nuevos ({len(new_groups)} coches)", "",
                   "| Precio | Año | km | CV | Lugar | Tipo | Título |",
                   "|---:|---:|---:|---:|---|---|---|"]
-        for a in sorted(new_ads, key=lambda x: x["price"]):
+        for g in sorted(new_groups, key=lambda g: g[0]["price"]):
+            a = g[0]
             lines.append(f"| {a['price']:,} € | {a['year']} | {a['km']:,} | {a['hp']} | "
-                         f"{a['city']} ({a['province']}) | {a['tipo']} | "
-                         f"[{a['title']}]({a['url']}) |")
-    if price_drops:
-        lines += ["", f"## 📉 Rebajas ({len(price_drops)})", "",
+                         f"{places_cell(g)} | {a['tipo']} | {links_cell(g)} |")
+    if drop_groups:
+        lines += ["", f"## 📉 Rebajas ({len(drop_groups)})", "",
                   "| Antes | Ahora | Título |", "|---:|---:|---|"]
-        for a, old in price_drops:
-            lines.append(f"| {old:,} € | {a['price']:,} € | [{a['title']}]({a['url']}) |")
-    # Inventario: todo lo visto en los últimos INV_DAYS días (incluye anuncios que
-    # esta tirada no ha alcanzado por el tope de páginas), ordenado por precio
-    new_ids = {a["id"] for a in new_ads}
-    drop_ids = {a["id"] for a, _ in price_drops}
+        for g, old in sorted(drop_groups, key=lambda x: x[0][0]["price"]):
+            lines.append(f"| {old:,} € | {g[0]['price']:,} € | {links_cell(g)} |")
+    # Inventario: todo lo visto en los últimos INV_DAYS días, AGRUPADO por coche
+    new_group_ids = {a["id"] for g in new_groups for a in g}
+    drop_group_ids = {a["id"] for g, _ in drop_groups for a in g}
     inv_cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=INV_DAYS)).strftime("%Y-%m-%d")
-    inventory = sorted(
-        (v for v in merged.values()
-         if v.get("last_seen", today) >= inv_cutoff
-         and isinstance(v.get("price"), (int, float))
-         and state_passes_filters(v)),
-        key=lambda x: x["price"])
-    lines += ["", f"## 🚗 Inventario completo ({len(inventory)})", "",
+    inv_ads = [v for v in merged.values()
+               if v.get("last_seen", today) >= inv_cutoff
+               and isinstance(v.get("price"), (int, float))
+               and state_passes_filters(v)]
+    inv_groups = sorted(group_cars(inv_ads), key=lambda g: g[0]["price"])
+    lines += ["", f"## 🚗 Inventario completo ({len(inv_groups)} coches · {len(inv_ads)} anuncios)", "",
               "| | Precio | Año | km | CV | Lugar | Tipo | Visto | Título |",
               "|---|---:|---:|---:|---:|---|---|---|---|"]
-    for a in inventory:
-        mark = "🆕" if a["id"] in new_ids else ("📉" if a["id"] in drop_ids else "")
+    for g in inv_groups:
+        a = g[0]
+        mark = "🆕" if any(x["id"] in new_group_ids for x in g) else \
+               ("📉" if any(x["id"] in drop_group_ids for x in g) else "")
+        if len(g) > 1:
+            mark += f" ×{len(g)}"
         km = a.get("km"); km = f"{km:,}" if isinstance(km, int) else ""
+        visto = max(x.get("last_seen", today) for x in g)
         lines.append(f"| {mark} | {a['price']:,} € | {a.get('year','')} | {km} | "
-                     f"{a.get('hp','')} | {a.get('city','')} ({a.get('province','')}) | "
-                     f"{a.get('tipo','')} | {a.get('last_seen', today)} | "
-                     f"[{a.get('title','')}]({a.get('url','')}) |")
+                     f"{a.get('hp','')} | {places_cell(g)} | "
+                     f"{a.get('tipo','')} | {visto} | {links_cell(g)} |")
     lines += ["", f"*Inventario = todo lo visto en los últimos {INV_DAYS} días "
-              f"(cada tirada cubre las {MAX_PAGES} primeras páginas del listado; "
-              "novedades y rebajas son exactas por dedupeo de ID). "
-              "La columna \"Visto\" indica la última tirada en la que apareció.*"]
+              f"(cada tirada cubre las {MAX_PAGES} primeras páginas del listado). "
+              "Los concesionarios publican el mismo coche en varias sucursales: los "
+              "anuncios repetidos se agrupan en una sola fila (×N, con un enlace por "
+              "anuncio) mostrando el precio más bajo. La columna \"Visto\" indica la "
+              "última tirada en la que apareció.*"]
     summary.write_text("\n".join(lines), encoding="utf-8")
 
     log(f"\n✔ Estado guardado en {STATE_DIR}/ · Resumen en resumen.md")
