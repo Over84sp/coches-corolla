@@ -31,9 +31,12 @@ MIN_YEAR = 2022        # año mínimo del vehículo
 MIN_HP = 140           # potencia mínima (CV)
 MAX_KM = None          # p. ej. 120000, o None para sin límite
 MAX_PRICE = None       # p. ej. 25000, o None para sin límite
-MAX_PAGES = 5          # páginas por tirada (35 anuncios/página). coches.net corta en
-                       # torno a la 6ª petición seguida, así que 5 es el punto dulce
-DELAY_S = 5.0          # segundos entre peticiones + jitter (cortesía / anti rate-limit)
+MAX_PAGES = 6          # páginas por tirada (35 anuncios/página) — robots.txt de
+                       # coches.net desaconseja pg≥7; si el rate-limit corta antes,
+                       # la tirada sigue con lo recogido (falla-rápido en pg>1)
+DELAY_S = 6.0          # segundos entre peticiones + jitter (cortesía / anti rate-limit)
+INV_DAYS = 14          # días que un anuncio visto permanece en el "inventario" del resumen
+PRUNE_DAYS = 30        # días antes de olvidar un anuncio del estado (seen.json)
 TIMEOUT_S = 30
 USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
               "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
@@ -129,7 +132,7 @@ def collect_ads() -> list:
     while page <= MAX_PAGES:
         url = BASE_URL + (f"?pg={page}" if page > 1 else "")
         log(f"→ Descargando página {page}: {url}")
-        html = fetch_html(url)
+        html = fetch_html(url, retries=4 if page == 1 else 1)
         if html is None:
             if page == 1:
                 log("  [!] La primera página no está accesible; tirada abortada (sin cambios de estado).")
@@ -141,7 +144,7 @@ def collect_ads() -> list:
         ads.extend(items)
         total_pages = results.get("totalPages", 1)
         log(f"   {len(items)} anuncios (total listado: {results.get('totalResults', '?')} · páginas: {total_pages})")
-        if page >= total_pages or not items:
+        if page >= total_pages or not items or page >= MAX_PAGES:
             break
         page += 1
         time.sleep(DELAY_S + random.uniform(0, 2))
@@ -248,19 +251,29 @@ def main() -> int:
             encoding="utf-8")
         return 0
 
-    seen = load_seen()
-    new_ads, price_drops, updated_seen = [], [], {}
+    # ── Estado: fusionar lo visto antes (memoria) con lo de esta tirada ──
+    today = now_iso[:10]
+    prune_cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=PRUNE_DAYS)).strftime("%Y-%m-%d")
+
+    merged = {}
+    for k, v in load_seen().items():                # migrar/recuperar lo anterior
+        e = dict(v)
+        e.setdefault("last_seen", today)
+        merged[k] = e
+    merged = {k: v for k, v in merged.items() if v["last_seen"] >= prune_cutoff}
+
+    new_ads, price_drops = [], []
     for a in matched:
-        prev = seen.get(a["id"])
+        prev = merged.get(a["id"])
         if prev is None:
             new_ads.append(a)
         elif prev.get("price") is not None and a["price"] is not None and a["price"] < prev["price"]:
             price_drops.append((a, prev["price"]))
-        a2 = dict(a)
-        a2.pop("first_seen", None)
-        updated_seen[a["id"]] = a2
+        a2 = {k: v for k, v in a.items() if k != "first_seen"}
+        a2["last_seen"] = today
+        merged[a["id"]] = a2
 
-    save_state(updated_seen, new_ads)
+    save_state(merged, new_ads)
 
     log("")
     if new_ads:
@@ -294,20 +307,30 @@ def main() -> int:
                   "| Antes | Ahora | Título |", "|---:|---:|---|"]
         for a, old in price_drops:
             lines.append(f"| {old:,} € | {a['price']:,} € | [{a['title']}]({a['url']}) |")
-    # Inventario completo visible en esta tirada, ordenado por precio
+    # Inventario: todo lo visto en los últimos INV_DAYS días (incluye anuncios que
+    # esta tirada no ha alcanzado por el tope de páginas), ordenado por precio
     new_ids = {a["id"] for a in new_ads}
     drop_ids = {a["id"] for a, _ in price_drops}
-    lines += ["", f"## 🚗 Inventario completo ({len(matched)})", "",
-              "| | Precio | Año | km | CV | Lugar | Tipo | Publicado | Título |",
+    inv_cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=INV_DAYS)).strftime("%Y-%m-%d")
+    inventory = sorted(
+        (v for v in merged.values()
+         if v.get("last_seen", today) >= inv_cutoff
+         and isinstance(v.get("price"), (int, float))),
+        key=lambda x: x["price"])
+    lines += ["", f"## 🚗 Inventario completo ({len(inventory)})", "",
+              "| | Precio | Año | km | CV | Lugar | Tipo | Visto | Título |",
               "|---|---:|---:|---:|---:|---|---|---|---|"]
-    for a in sorted(matched, key=lambda x: x["price"]):
+    for a in inventory:
         mark = "🆕" if a["id"] in new_ids else ("📉" if a["id"] in drop_ids else "")
-        lines.append(f"| {mark} | {a['price']:,} € | {a['year']} | {a['km']:,} | {a['hp']} | "
-                     f"{a['city']} ({a['province']}) | {a['tipo']} | {a['published']} | "
-                     f"[{a['title']}]({a['url']}) |")
-    lines += ["", "*El inventario cubre las 5 primeras páginas del listado "
-              "(tope anti-rate-limit de coches.net); novedades y rebajas son exactas "
-              "gracias al dedupeo por ID.*"]
+        km = a.get("km"); km = f"{km:,}" if isinstance(km, int) else ""
+        lines.append(f"| {mark} | {a['price']:,} € | {a.get('year','')} | {km} | "
+                     f"{a.get('hp','')} | {a.get('city','')} ({a.get('province','')}) | "
+                     f"{a.get('tipo','')} | {a.get('last_seen', today)} | "
+                     f"[{a.get('title','')}]({a.get('url','')}) |")
+    lines += ["", f"*Inventario = todo lo visto en los últimos {INV_DAYS} días "
+              f"(cada tirada cubre las {MAX_PAGES} primeras páginas del listado; "
+              "novedades y rebajas son exactas por dedupeo de ID). "
+              "La columna \"Visto\" indica la última tirada en la que apareció.*"]
     summary.write_text("\n".join(lines), encoding="utf-8")
 
     log(f"\n✔ Estado guardado en {STATE_DIR}/ · Resumen en resumen.md")
