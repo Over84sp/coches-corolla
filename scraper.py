@@ -336,7 +336,8 @@ def ai_ranking(coches: list, now_iso: str):
                      {"role": "user", "content": usrmsg}]}
     try:
         estado, out = _curl_json(url_ia, payload=payload, token=tok, timeout=90)
-        if estado == "400" and isinstance(out, dict) and "response_format" in str(out):
+        if (estado == "400" and isinstance(out, dict)
+                and "json" in str(out).lower()):
             payload.pop("response_format", None)          # reintento sin json_object
             estado, out = _curl_json(url_ia, payload=payload, token=tok, timeout=90)
         if estado != "200" or not isinstance(out, dict):
