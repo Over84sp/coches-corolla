@@ -6,7 +6,7 @@ Scraper **ultraligero** de coches.net que se ejecuta 2 veces al día en
 
 - Cada ejecución hace como máximo **6 peticiones** (35 anuncios/página, ~2,5 s entre ellas).
 - Filtrado en servidor por URL: `toyota/corolla/familiar/segunda-mano` (el familiar **es** el Touring Sports).
-- Filtrado en local: año ≥ 2022 y potencia ≥ 160 CV (versiones 180H/196H/200H, como la búsqueda manual; descarta 125H de 122 CV y 140H de 140 CV).
+- Filtrado en local: año ≥ 2022 y potencia ≥ 140 CV (versiones 140H/180H/196H/200H; descarta los 125H de 122 CV).
 - Solo se consultan listados permitidos por `robots.txt` (respeta su tope de paginación `pg≥7`).
 
 ## Puesta en marcha (2 minutos)
@@ -48,7 +48,7 @@ Todo está en el bloque `CONFIGURACIÓN` de `scraper.py`:
 |---|---|---|
 | `BASE_URL` | Listado de coches.net | `.../segunda-mano/barcelona/` · `.../20000_euros/` |
 | `MIN_YEAR` | Año mínimo | `2022` |
-| `MIN_HP` | CV mínimos | `160` |
+| `MIN_HP` | CV mínimos | `140` |
 | `MAX_KM` / `MAX_PRICE` | Límites locales opcionales | `120000` / `25000` o `None` |
 | `MAX_PAGES` | Tope de páginas por ejecución | `6` (máx. recomendado) |
 

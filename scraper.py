@@ -28,8 +28,8 @@ from pathlib import Path
 BASE_URL = "https://www.coches.net/toyota/corolla/familiar/segunda-mano/"
 # ¿Provincia? p. ej. ".../segunda-mano/barcelona/" · precio máx: ".../20000_euros/"
 MIN_YEAR = 2022        # año mínimo del vehículo
-MIN_HP = 160           # potencia mínima (CV) — igual que la búsqueda manual:
-                       # solo versiones 180H / 196H / 200H (los 140H quedan fuera)
+MIN_HP = 140           # potencia mínima (CV): incluye 140H/180H/196H/200H,
+                       # descarta los 125H (122 CV)
 MAX_KM = None          # p. ej. 120000, o None para sin límite
 MAX_PRICE = None       # p. ej. 25000, o None para sin límite
 MAX_PAGES = 6          # páginas por tirada (35 anuncios/página) — robots.txt de
@@ -354,4 +354,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    sys.exit(main())
+== "__main__":
     sys.exit(main())
