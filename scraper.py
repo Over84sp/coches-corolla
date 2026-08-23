@@ -245,8 +245,8 @@ PROVEEDORES = {
     "xai-":  ("https://api.x.ai/v1",       ["grok-4-fast-non-reasoning", "grok-4-fast",
                                              "grok-3-mini", "grok-3"]),
     "gsk_":  ("https://api.groq.com/openai/v1",
-              ["qwen/qwen3.6-27b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant",
-               "groq/compound-mini"]),
+              ["qwen/qwen3.6-27b", "groq/compound-mini", "llama-3.3-70b-versatile",
+               "llama-3.1-8b-instant"]),
     "sk_or_": ("https://openrouter.ai/api/v1",
                ["x-ai/grok-4-fast:free", "x-ai/grok-4-fast", "x-ai/grok-3-mini",
                 "x-ai/grok-4-fast-non-reasoning", "deepseek/deepseek-chat-v3.1:free",
@@ -320,10 +320,10 @@ def ai_ranking(coches: list, now_iso: str):
         return None
     base, key, candidatos = ia
 
-    lineas = ["id|precio|año|km|CV|versión|lugar|valoración"]
-    for c in coches[:45]:
+    lineas = ["id|precio|año|km|CV|versión|lugar|val"]
+    for c in coches[:40]:
         lineas.append(f"{c['id']}|{c['precio']}€|{c['anyo']}|{c['km']}km|{c['cv']}CV|"
-                      f"{c['titulo'][:34]}|{c['lugares'][:18]}|{c.get('rating') or '-'}")
+                      f"{c['titulo'][:24]}|{c['lugares'][:12]}|{c.get('rating') or '-'}")
     sysmsg = ("Eres un experto en coches de ocasión Toyota Corolla Touring Sports "
               "híbridos. Respondes SOLO con JSON válido, sin texto adicional.")
     usrmsg = ("Analiza este inventario y haz un ranking de las 8 MEJORES oportunidades "
@@ -338,9 +338,15 @@ def ai_ranking(coches: list, now_iso: str):
             "model": modelo, "temperature": 0.2, "max_tokens": 1800,
             "messages": [{"role": "system", "content": sysmsg},
                          {"role": "user", "content": usrmsg}]}
+        if "qwen" in modelo.lower():
+            payload["reasoning_format"] = "hidden"   # qwen3.6 "piensa": ocultarlo
         try:
             estado, out = _curl_json(base + "/chat/completions",
                                      payload=payload, token=key, timeout=90)
+            if estado == "400" and isinstance(out, dict) and "reasoning" in str(out):
+                payload.pop("reasoning_format", None)
+                estado, out = _curl_json(base + "/chat/completions",
+                                         payload=payload, token=key, timeout=90)
             if estado != "200" or not isinstance(out, dict):
                 ultimo_error = f"[{modelo}] HTTP {estado}: {str(out)[:120]}"
                 log(f"  [IA] {ultimo_error}")
@@ -366,7 +372,8 @@ def ai_ranking(coches: list, now_iso: str):
             if ranking:
                 log(f"✔ Ranking IA generado ({modelo}, {len(ranking)} coches)")
                 return {"fecha": now_iso, "ia": modelo, "ranking": ranking}
-            ultimo_error = f"[{modelo}] ranking vacío"
+            ultimo_error = (f"[{modelo}] ranking vacío · content={contenido[:60]!r}")
+            log(f"  [IA] {ultimo_error}")
         except Exception as exc:  # noqa: BLE001
             ultimo_error = f"[{modelo}] {str(exc)[:110]}"
             log(f"  [IA] {ultimo_error}")
