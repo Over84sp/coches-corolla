@@ -245,7 +245,10 @@ PROVEEDORES = {
     "xai-":  ("https://api.x.ai/v1",       ["grok-4-fast-non-reasoning", "grok-4-fast",
                                              "grok-3-mini", "grok-3"]),
     "gsk_":  ("https://api.groq.com/openai/v1", ["llama-3.1-8b-instant", "llama-3.1-8b"]),
-    "sk_or_": ("https://openrouter.ai/api/v1",  ["meta-llama/llama-3.1-8b-instruct:free"]),
+    "sk_or_": ("https://openrouter.ai/api/v1",
+               ["x-ai/grok-4-fast:free", "x-ai/grok-4-fast", "x-ai/grok-3-mini",
+                "x-ai/grok-4-fast-non-reasoning", "deepseek/deepseek-chat-v3.1:free",
+                "meta-llama/llama-3.3-70b-instruct:free"]),
     "sk-":   ("https://api.openai.com/v1", ["gpt-4o-mini", "gpt-4.1-mini"]),
 }
 
@@ -269,10 +272,14 @@ def _resolver_ia():
         try:
             estado, cuerpo = _curl_json(base + "/models", token=key, timeout=20)
             ids = [m.get("id", "") for m in (cuerpo or {}).get("data", [])]
-            for pref in preferidas + ids:
-                if any(pref in i for i in ids):
-                    modelo = next(i for i in ids if pref in i)
-                    break
+            exacto = next((p for p in preferidas if p in ids), None)
+            if exacto:
+                modelo = exacto
+            else:
+                parcial = next((i for i in ids
+                                if any(p.split(":")[0] in i for p in preferidas)), None)
+                if parcial:
+                    modelo = parcial
         except Exception:  # noqa: BLE001 — si falla, usamos el preferido por defecto
             pass
     return url, modelo, key
