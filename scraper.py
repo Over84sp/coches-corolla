@@ -326,16 +326,16 @@ def ai_ranking(coches: list, now_iso: str):
                       f"{c['titulo'][:34]}|{c['lugares'][:18]}|{c.get('rating') or '-'}")
     sysmsg = ("Eres un experto en coches de ocasión Toyota Corolla Touring Sports "
               "híbridos. Respondes SOLO con JSON válido, sin texto adicional.")
-    usrmsg = ("Analiza este inventario y haz un ranking de las 12 MEJORES oportunidades "
+    usrmsg = ("Analiza este inventario y haz un ranking de las 8 MEJORES oportunidades "
               "calidad/precio (precio vs km y año, potencia, acabado, reputación del "
-              "vendedor, coherencia). Formato exacto:\n"
-              '{"ranking":[{"id":"<id>","score":<0-100>,"comentario":"máx 85 caracteres"}]}\n'
+              "vendedor, coherencia). Formato exacto, sin texto extra:\n"
+              '{"ranking":[{"id":"<id>","score":<0-100>,"comentario":"menos de 50 caracteres"}]}\n'
               "Inventario:\n" + "\n".join(lineas))
 
     ultimo_error = "sin intentos"
     for modelo in candidatos:
         payload = {
-            "model": modelo, "temperature": 0.2, "max_tokens": 900,
+            "model": modelo, "temperature": 0.2, "max_tokens": 1800,
             "messages": [{"role": "system", "content": sysmsg},
                          {"role": "user", "content": usrmsg}]}
         try:
@@ -349,11 +349,17 @@ def ai_ranking(coches: list, now_iso: str):
             contenido = (msg.get("content") or msg.get("reasoning_content")
                          or msg.get("reasoning") or "").strip()
             contenido = re.sub(r"^```(json)?|```$", "", contenido.strip(), flags=re.M).strip()
-            if not contenido.startswith("{"):
-                m = re.search(r"\{[\s\S]*\}", contenido)
-                contenido = m.group(0) if m else ""
-            ranking = json.loads(contenido).get("ranking", [])
             ids_validos = {c["id"] for c in coches}
+            ranking = []
+            try:
+                ranking = json.loads(contenido).get("ranking", [])
+            except json.JSONDecodeError:
+                # JSON truncado: rescatamos las entradas completas una a una
+                for e in re.findall(r'\{\s*"id"\s*:[^{}]*\}', contenido):
+                    try:
+                        ranking.append(json.loads(e))
+                    except json.JSONDecodeError:
+                        pass
             ranking = [{"id": str(r.get("id", "")), "score": int(r.get("score", 50)),
                         "comentario": str(r.get("comentario", ""))[:100]}
                        for r in ranking if str(r.get("id")) in ids_validos][:12]
