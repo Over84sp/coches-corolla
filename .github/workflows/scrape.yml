@@ -21,6 +21,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Diagnóstico de conectividad
+        run: |
+          echo "== IP de salida =="
+          curl -s https://api.ipify.org || true
+          echo
+          echo "== robots.txt =="
+          curl -s -o /tmp/r.txt -w "HTTP %{http_code} · %{size_download} bytes\n" -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36" https://www.coches.net/robots.txt || true
+          head -c 200 /tmp/r.txt || true
+          echo
+          echo "== listado con curl (grep INITIAL_PROPS) =="
+          curl -s -o /tmp/c.html -w "HTTP %{http_code} · %{size_download} bytes\n" -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36" -H "Accept-Language: es-ES,es;q=0.9" "https://www.coches.net/toyota/corolla/familiar/segunda-mano/" || true
+          grep -c "__INITIAL_PROPS__" /tmp/c.html || echo "INITIAL_PROPS NO presente"
+          head -c 300 /tmp/c.html || true
+          echo
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
