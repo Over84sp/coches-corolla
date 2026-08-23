@@ -188,6 +188,7 @@ def normalize(ad: dict, now_iso: str) -> dict:
         "seller_name": (seller.get("name") or "").strip(),
         "seller_rating": ratings.get("average", ""),
         "tipo": "Km0/Demo" if "/km-0/" in (ad.get("url") or "") else "Ocasión",
+        "foto": (ad.get("imgUrl") or "").split("/359x269cut")[0],
         "url": "https://www.coches.net" + (ad.get("url") or ""),
     }
 
@@ -313,94 +314,59 @@ def _curl_json(url, payload=None, token=None, timeout=90):
         return estado, cuerpo
 
 
-def ai_ranking(coches: list, now_iso: str):
-    """Ranking de oportunidades con LLM (si hay secret IA_API_KEY). Prueba varios
-    modelos hasta que uno responda. Devuelve None si no lo consigue (el dashboard
-    usa entonces su heurístico integrado)."""
+def ai_comentarios(nuevos: list, now_iso: str):
+    """Comentario breve de la IA para cada coche NUEVO (payload pequeño = fiable).
+    Devuelve {id: comentario} (vacío si no hay IA o falla)."""
+    if not nuevos:
+        return {}
     ia = _resolver_ia()
-    if not ia or not coches:
-        return None
+    if not ia:
+        return {}
     base, key, candidatos = ia
-
-    lineas = ["id|precio|año|km|CV|versión|lugar|val"]
-    for c in coches[:40]:
-        lineas.append(f"{c['id']}|{c['precio']}€|{c['anyo']}|{c['km']}km|{c.get('modelo') or str(c['cv'])+'CV'}|"
-                      f"{c['titulo'][:24]}|{c['lugares'][:12]}|{c.get('rating') or '-'}")
-    sysmsg = ("Eres un experto en coches de ocasión Toyota Corolla Touring Sports "
-              "híbridos. Respondes SOLO con JSON válido, sin texto adicional.")
-    usrmsg = ("Analiza este inventario y haz un ranking de las 8 MEJORES oportunidades "
-              "calidad/precio (precio vs km y año, potencia, acabado, reputación del "
-              "vendedor, coherencia). Formato exacto, sin texto extra:\n"
-              '{"ranking":[{"id":"<id>","score":<0-100>,"comentario":"menos de 50 caracteres"}]}\n'
-              "Inventario:\n" + "\n".join(lineas))
-
-    ultimo_error = "sin intentos"
+    lineas = [f"{c.get('id')}|{c.get('modelo')}|{c['precio']}€|{c['anyo']}|{c['km']}km|"
+              f"{c['titulo'][:38]}|{c['lugares'][:20]}|⭐{c.get('rating') or '-'}"
+              for c in nuevos[:6]]
+    sysmsg = ("Eres asesor experto en coches de ocasión Toyota Corolla híbridos. "
+              "Respondes SOLO con JSON válido.")
+    usrmsg = ("Escribe una frase útil (máx 75 caracteres) sobre cada anuncio nuevo: qué "
+              "destaca (precio/km/equipamiento) o qué conviene vigilar. Formato exacto:\n"
+              '{"comentarios":[{"id":"<id>","comentario":"..."}]}\nAnuncios:\n'
+              + "\n".join(lineas))
     for modelo in candidatos:
         payload = {
-            "model": modelo, "temperature": 0.2, "max_tokens": 1800,
+            "model": modelo, "temperature": 0.4, "max_tokens": 700,
             "messages": [{"role": "system", "content": sysmsg},
                          {"role": "user", "content": usrmsg}]}
-        if "qwen" in modelo.lower():
-            payload["reasoning_format"] = "hidden"   # qwen3.6 "piensa": ocultarlo
         try:
             estado, out = _curl_json(base + "/chat/completions",
                                      payload=payload, token=key, timeout=90)
-            if estado == "400" and isinstance(out, dict) and "reasoning" in str(out):
-                payload.pop("reasoning_format", None)
-                estado, out = _curl_json(base + "/chat/completions",
-                                         payload=payload, token=key, timeout=90)
             if estado != "200" or not isinstance(out, dict):
-                ultimo_error = f"[{modelo}] HTTP {estado}: {str(out)[:120]}"
-                log(f"  [IA] {ultimo_error}")
                 continue
             msg = (out.get("choices") or [{}])[0].get("message", {}) or {}
             contenido = (msg.get("content") or msg.get("reasoning_content")
                          or msg.get("reasoning") or "").strip()
             contenido = re.sub(r"^```(json)?|```$", "", contenido.strip(), flags=re.M).strip()
-            ids_validos = {c["id"] for c in coches}
-            ranking = []
+            if not contenido.startswith("{"):
+                m = re.search(r"\{[\s\S]*\}", contenido)
+                contenido = m.group(0) if m else ""
             try:
-                ranking = json.loads(contenido).get("ranking", [])
+                items = json.loads(contenido).get("comentarios", [])
             except json.JSONDecodeError:
-                # JSON truncado: rescatamos las entradas completas una a una
-                for e in re.findall(r'\{\s*"id"\s*:[^{}]*\}', contenido):
-                    try:
-                        ranking.append(json.loads(e))
-                    except json.JSONDecodeError:
-                        pass
-            ranking = [{"id": str(r.get("id", "")), "score": int(r.get("score", 50)),
-                        "comentario": str(r.get("comentario", ""))[:100]}
-                       for r in ranking if str(r.get("id")) in ids_validos][:12]
-            if ranking:
-                log(f"✔ Ranking IA generado ({modelo}, {len(ranking)} coches)")
-                resultado = {"fecha": now_iso, "ia": modelo, "ranking": ranking}
-                STATE_DIR.mkdir(exist_ok=True)
-                (STATE_DIR / "ranking_ia.json").write_text(
-                    json.dumps(resultado, ensure_ascii=False), encoding="utf-8")
+                items = []
+            ids_validos = {c.get("id") for c in nuevos[:6]}
+            resultado = {str(it.get("id")): str(it.get("comentario", ""))[:110]
+                         for it in items if str(it.get("id")) in ids_validos
+                         and it.get("comentario")}
+            if resultado:
+                log(f"✔ Comentarios IA para {len(resultado)} novedad(es) ({modelo})")
                 return resultado
-            ultimo_error = (f"[{modelo}] ranking vacío · content={contenido[:60]!r}")
-            log(f"  [IA] {ultimo_error}")
         except Exception as exc:  # noqa: BLE001
-            ultimo_error = f"[{modelo}] {str(exc)[:110]}"
-            log(f"  [IA] {ultimo_error}")
-    # caché: si esta tirada falló, reutiliza el último ranking bueno (máx 36 h)
-    cache = STATE_DIR / "ranking_ia.json"
-    if cache.exists():
-        try:
-            previo = json.loads(cache.read_text(encoding="utf-8"))
-            fecha = dt.datetime.strptime(previo["fecha"][:16], "%Y-%m-%d %H:%M")
-            if (dt.datetime.utcnow() - fecha).total_seconds() < 36 * 3600:
-                log(f"⚠ Ranking IA no disponible ({ultimo_error[:80]}) — "
-                    f"reutilizo el de {previo['fecha']} ({previo['ia']})")
-                return previo
-        except Exception:  # noqa: BLE001
-            pass
-    log(f"⚠ Ranking IA no disponible ({ultimo_error}) — el dashboard usará el heurístico")
-    return None
+            log(f"  [IA] [{modelo}] {str(exc)[:100]}")
+    return {}
 
 
 def version_de(titulo: str, hp) -> str:
-    """Modelo del Corolla TS: 140H / 180H / 200H (por título, con fallback por CV)."""
+    """Modelo del Corolla TS: 140H / 180H / 200H (por título, fallback por CV)."""
     t = (titulo or "").upper()
     for tag in ("200H", "180H", "140H"):
         if tag in t:
@@ -410,6 +376,27 @@ def version_de(titulo: str, hp) -> str:
     except (TypeError, ValueError):
         return "Otro"
     return {140: "140H", 178: "200H", 180: "180H", 184: "180H", 196: "200H"}.get(hp, f"{hp} CV")
+
+
+def registrar_estado(fecha, anuncios, nuevos, ia_ok, aviso=""):
+    """estado.json (última ejecución) + estado_log.csv (historial de tiradas)."""
+    STATE_DIR.mkdir(exist_ok=True)
+    ahora = dt.datetime.now(dt.timezone.utc)
+    prox = ahora.replace(hour=6, minute=30, second=0, microsecond=0)
+    if ahora >= prox:
+        prox = (ahora.replace(hour=18, minute=30) if ahora.hour < 18
+                else (ahora + dt.timedelta(days=1)).replace(hour=6, minute=30))
+    (STATE_DIR / "estado.json").write_text(json.dumps({
+        "fecha": fecha, "anuncios": anuncios, "nuevos": nuevos, "ia_ok": ia_ok,
+        "aviso": aviso, "proxima": prox.strftime("%Y-%m-%d %H:%M UTC")}, ensure_ascii=False),
+        encoding="utf-8")
+    log_f = STATE_DIR / "estado_log.csv"
+    nuevo_f = not log_f.exists()
+    with log_f.open("a", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh)
+        if nuevo_f:
+            w.writerow(["fecha", "anuncios", "nuevos", "ia_ok", "aviso"])
+        w.writerow([fecha[:16], anuncios, nuevos, int(ia_ok), aviso[:60]])
 
 
 def write_site(inv_groups, inv_ads_count, new_group_ids, drop_group_ids, now_iso,
@@ -471,7 +458,40 @@ def write_site(inv_groups, inv_ads_count, new_group_ids, drop_group_ids, now_iso
         "rebajado": any(x["id"] in drop_group_ids for x in g),
     } for g in inv_groups]
 
-    ranking = ai_ranking(inventario, now_iso)
+    # ── comentarios de la IA SOLO para novedades ──
+    nuevos = [c for c in inventario if c["nuevo"]]
+    com_file = STATE_DIR / "comentarios.csv"
+    comentarios = {}
+    if com_file.exists():
+        for row in csv.DictReader(com_file.open(encoding="utf-8")):
+            if row.get("comentario"):
+                comentarios[row.get("id")] = row.get("comentario")
+    frescos = ai_comentarios([c for c in nuevos if c["id"] not in comentarios], now_iso)
+    if frescos:
+        comentarios.update(frescos)
+        sin_cab = not com_file.exists()
+        with com_file.open("a", newline="", encoding="utf-8") as fh:
+            w = csv.writer(fh)
+            if sin_cab:
+                w.writerow(["id", "fecha", "comentario"])
+            for cid, com in frescos.items():
+                w.writerow([cid, now_iso[:16], com])
+    for c in nuevos:
+        c["comentarioIA"] = comentarios.get(c["id"], "")
+
+    # ── estado del sistema ──
+    registrar_estado(now_iso, len(inventario), len(nuevos), bool(frescos) or not nuevos)
+    ejecuciones = []
+    log_f = STATE_DIR / "estado_log.csv"
+    if log_f.exists():
+        for row in csv.DictReader(log_f.open(encoding="utf-8")):
+            try:
+                ejecuciones.append({"fecha": row["fecha"], "anuncios": int(row["anuncios"]),
+                                    "nuevos": int(row["nuevos"]), "ia": bool(int(row["ia_ok"])),
+                                    "aviso": row.get("aviso", "")})
+            except (KeyError, ValueError):
+                pass
+    estado = json.loads((STATE_DIR / "estado.json").read_text(encoding="utf-8"))
 
     # ── histórico por modelo (una fila por tirada y modelo) ──
     por_modelo = {}
@@ -562,7 +582,9 @@ def write_site(inv_groups, inv_ads_count, new_group_ids, drop_group_ids, now_iso
 
     datos = {"actualizado": now_iso, "config": f"≥{MIN_YEAR} · ≥{MIN_HP} CV",
              "anuncios": inv_ads_count, "rebajas": len(drop_group_ids),
-             "inventario": inventario, "historico": historico, "rankingIA": ranking,
+             "inventario": inventario, "historico": historico,
+             "comentariosIA": comentarios, "novedades": nuevos,
+             "estado": estado, "ejecuciones": ejecuciones[-30:],
              "historicoModelos": historico_modelos, "salidas": salidas_todas,
              "objetivos": objetivos}
     html = plantilla.read_text(encoding="utf-8").replace(
@@ -626,6 +648,10 @@ def main() -> int:
     if not matched:
         # Tirada vacía (bloqueo o sin resultados): NO tocar el estado
         log("⚠ Sin anuncios esta tirada — el estado y el CSV quedan como estaban.")
+        try:
+            registrar_estado(now_iso, 0, 0, False, aviso="tirada sin datos (bloqueo)")
+        except Exception:  # noqa: BLE001
+            pass
         Path(__file__).resolve().parent.joinpath("resumen.md").write_text(
             f"# Corolla TS ≥{MIN_YEAR} · ≥{MIN_HP} CV — {now_iso}\n\n"
             "⚠ Ejecución sin datos (posible bloqueo temporal de coches.net). "

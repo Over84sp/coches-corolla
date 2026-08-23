@@ -65,6 +65,8 @@
 
 <div class="kpis" id="kpis"></div>
 
+<div class="rankwrap card" id="estadoSec" style="padding:12px 16px"></div>
+
 <div class="filtros card">
   <div class="grupo" id="fCV"><span class="lab">Modelo</span></div>
   <div class="grupo" id="fTrim"><span class="lab">Acabado</span></div>
@@ -84,6 +86,8 @@
   <div class="card"><h3>🎯 Objetivos de compra</h3><div id="c9"></div></div>
   <div class="card"><h3>Velocidad de mercado (vendidos) ⏱️</h3><div id="c10"></div></div>
 </div>
+
+<div class="rankwrap card" id="novedadesSec" style="padding-bottom:14px"></div>
 
 <div class="rankwrap card" id="rankSec" style="padding-bottom:14px"></div>
 
@@ -123,11 +127,7 @@ function filtrar(){
 
 /* ─── ranking: IA o heurístico ─── */
 function mapaRanking(){
-  if (DATA.rankingIA && DATA.rankingIA.ranking){
-    const m = {};
-    DATA.rankingIA.ranking.forEach((r,i)=>m[r.id]={pos:i+1, score:r.score, com:r.comentario});
-    return {m, ia:true, fecha:DATA.rankingIA.fecha, modelo:DATA.rankingIA.ia};
-  }
+  // heurístico de coordenadas
   // heurístico: precio vs regresión km dentro de cada grupo de CV
   const byCv = {};
   DATA.inventario.forEach(c => (byCv[c.cv]=byCv[c.cv]||[]).push(c));
@@ -159,9 +159,10 @@ function mapaRanking(){
   const top = Object.entries(m).sort((x,y)=>y[1].score-x[1].score).slice(0,12)
     .map(([id])=>id);
   top.forEach((id,i)=>m[id].pos=i+1);
-  return {m, ia:false};
+  return {m};
 }
 let RANK = null;
+const COMIA = DATA.comentariosIA || {};
 
 /* ─── KPIs ─── */
 function kpis(I){
@@ -414,20 +415,57 @@ function c10(){
     `<div><div class=v style="font-size:19px;font-weight:700;color:var(--ok)">${precio?fmtE(precio):'—'}</div><div class=mini>mediana de salida</div></div></div>`+s;
 }
 
+/* ─── novedades ─── */
+function novedadesSec(){
+  const box=document.getElementById('novedadesSec');
+  const N=DATA.novedades||[];
+  let html=`<h3>🆕 Novedades de la última tirada</h3>`;
+  if(!N.length){
+    html+=`<p class=mini style="margin:0 0 8px">Sin coches nuevos esta vez — a la próxima 🤞 (tiradas a las 08:30 y 20:30)</p>`;
+    box.innerHTML=html; return;
+  }
+  html+=`<div class="rankcards">`;
+  N.forEach(c=>{
+    const obj=(DATA.objetivos||[]).find(o=>o.modelo===versionDe(c));
+    const tgt=(obj&&obj.objetivo)||Infinity;
+    html+=`<div class="rk medalla">
+      ${c.foto?`<img src="${c.foto}" alt="" style="width:100%;height:110px;object-fit:cover;border-radius:9px;margin-bottom:7px" onerror="this.remove()">`:''}
+      <span class="score">${c.precio<=tgt?'🎯':''}</span>
+      <div class="tit"><a href="${c.url}">${esc(c.titulo)}</a>${c.n>1?` <span class=tag>×${c.n}</span>`:''}</div>
+      <div class="spec">${fmtE(c.precio)} · ${c.anyo} · ${fmtN(c.km)} km · ${versionDe(c)} · ${esc(c.lugares)}${c.rating?` · ⭐${c.rating}`:''}</div>
+      ${c.comentarioIA?`<div class="com" style="color:var(--ac)">💬 ${esc(c.comentarioIA)}</div>`:`<div class="mini" style="margin-top:7px">(sin comentario IA esta vez)</div>`}
+    </div>`;
+  });
+  html+='</div>';
+  box.innerHTML=html;
+}
+
+/* ─── estado del sistema ─── */
+function estadoSec(){
+  const box=document.getElementById('estadoSec');
+  const E=DATA.estado||{}, runs=DATA.ejecuciones||[];
+  if(!E.fecha){box.innerHTML='';return}
+  const hace=(Date.now()-new Date(E.fecha.replace(' UTC','Z')).getTime())/36e5;
+  const semaforo=hace<8?'#7ee787':(hace<22?'#ffb86c':'#ff7b72');
+  const txt=hace<8?'todo en orden':(hace<22?'última tirada antigua — revisa Actions':'sin tiradas recientes — algo falla');
+  const puntos=runs.slice(-24).map(r=>`<span title="${r.fecha} · ${r.anuncios} anuncios${r.nuevos?' · '+r.nuevos+' nuevos':''}${r.aviso?' · '+r.aviso:''}" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:3px;background:${r.anuncios>0?'#7ee787':'#ff7b72'}"></span>`).join('');
+  box.innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center">
+    <div><span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:${semaforo};margin-right:7px"></span><b>${txt}</b></div>
+    <div class=mini>📡 actualizado <b>${esc(E.fecha)}</b> (hace ${hace<1?Math.round(hace*60)+' min':hace.toFixed(1)+' h'})</div>
+    <div class=mini>⏭️ próxima tirada ~ <b>${esc(E.proxima||'08:30/20:30')}</b> (10:30/22:30 en España)</div>
+    <div class=mini>📊 últimas tiradas: ${puntos}<span style="color:var(--tx2);font-size:11px">verde=OK</span></div>
+  </div>`;
+}
+
 /* ─── ranking ─── */
 function rankingSec(I){
   const box=document.getElementById('rankSec');
   const conPos = I.filter(c=>RANK.m[c.id] && RANK.m[c.id].pos);
   conPos.sort((a,b)=>RANK.m[a.id].pos-RANK.m[b.id].pos);
   const med=['🥇','🥈','🥉'];
-  let head;
-  if(RANK.ia){
-    head = `🏆 Ranking IA <span class="tag" style="margin-left:4px">${esc(RANK.modelo)} · GitHub Models</span>`;
-  }else{
-    head = `🏆 Ranking automático <span class="tag" style="margin-left:4px">heurístico precio vs km/año</span>`;
-  }
+  const head = `🏆 Mejores oportunidades <span class="tag" style="margin-left:4px">100% transparente: precio vs. tendencia de su modelo + señales</span>`;
   let html = `<h3>${head}</h3>
-    <p class="mini" style="margin:0 0 10px">${conPos.length?`${conPos.length} coches del ranking pasan los filtros actuales`:'ningún coche del ranking pasa los filtros'} · puntuación 0-100 sobre calidad/precio</p>
+    <p class="mini" style="margin:0 0 10px">${conPos.length?`${conPos.length} coches del ranking pasan los filtros actuales`:'ningún coche del ranking pasa los filtros'} · 100 = mejor calidad/precio de su grupo</p>
     <div class="rankcards">`;
   conPos.slice(0,12).forEach(c=>{
     const r=RANK.m[c.id];
@@ -436,7 +474,8 @@ function rankingSec(I){
       <span class="pos">${pos}</span><span class="score">${r.score}</span>
       <div class="tit"><a href="${c.url}">${esc(c.titulo)}</a>${c.n>1?` <span class=tag>×${c.n}</span>`:''}</div>
       <div class="spec">${fmtE(c.precio)} · ${c.anyo} · ${fmtN(c.km)} km · ${c.cv} CV · ${esc(c.lugares)}${c.rating?` · ⭐${c.rating}`:''}</div>
-      ${r.com?`<div class="com">“${esc(r.com)}”</div>`:''}
+      <div class="com">“${esc(r.com)}”</div>
+      ${COMIA[c.id]?`<div class="com" style="color:var(--ac)">💬 IA: “${esc(COMIA[c.id])}”</div>`:''}
     </div>`;
   });
   html+='</div>';
@@ -502,7 +541,8 @@ function refresco(){
   const vistas=['lista','modelo','acabado'];
   document.querySelectorAll('#fVista .chip').forEach((b,i)=>b.classList.toggle('on',F.vista===vistas[i]));
   const I=filtrar();
-  kpis(I);c1(I);c2(I);c3(I);c4(I);c5(I);c6();c7();c8(I);c9(I);c10();rankingSec(I);tabla(I);
+  kpis(I);c1(I);c2(I);c3(I);c4(I);c5(I);c6();c7();c8(I);c9(I);c10();
+  novedadesSec();estadoSec();rankingSec(I);tabla(I);
 }
 
 /* ─── arranque ─── */
@@ -516,7 +556,7 @@ if(DATA){
   });
   refresco();
   document.getElementById('foot').innerHTML =
-    `Hecho con 💙 por tu scraper (GitHub Actions · 2 tiradas/día) · fuente: coches.net · ranking ${RANK.ia?'por IA ('+esc(RANK.modelo)+')':'heurístico — la IA se activa sola en cuanto esté disponible'} · multilistings agrupados (×N)`;
+    `Hecho con 💙 por tu scraper (GitHub Actions · tiradas 08:30 y 20:30) · fuente: coches.net · ranking transparente + comentarios IA en novedades · multilistings agrupados (×N)`;
 }else{
   document.getElementById('sub').textContent='⚠️ sin datos: este fichero se genera en cada tirada del scraper';
 }
