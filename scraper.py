@@ -371,12 +371,28 @@ def ai_ranking(coches: list, now_iso: str):
                        for r in ranking if str(r.get("id")) in ids_validos][:12]
             if ranking:
                 log(f"✔ Ranking IA generado ({modelo}, {len(ranking)} coches)")
-                return {"fecha": now_iso, "ia": modelo, "ranking": ranking}
+                resultado = {"fecha": now_iso, "ia": modelo, "ranking": ranking}
+                STATE_DIR.mkdir(exist_ok=True)
+                (STATE_DIR / "ranking_ia.json").write_text(
+                    json.dumps(resultado, ensure_ascii=False), encoding="utf-8")
+                return resultado
             ultimo_error = (f"[{modelo}] ranking vacío · content={contenido[:60]!r}")
             log(f"  [IA] {ultimo_error}")
         except Exception as exc:  # noqa: BLE001
             ultimo_error = f"[{modelo}] {str(exc)[:110]}"
             log(f"  [IA] {ultimo_error}")
+    # caché: si esta tirada falló, reutiliza el último ranking bueno (máx 36 h)
+    cache = STATE_DIR / "ranking_ia.json"
+    if cache.exists():
+        try:
+            previo = json.loads(cache.read_text(encoding="utf-8"))
+            fecha = dt.datetime.strptime(previo["fecha"][:16], "%Y-%m-%d %H:%M")
+            if (dt.datetime.utcnow() - fecha).total_seconds() < 36 * 3600:
+                log(f"⚠ Ranking IA no disponible ({ultimo_error[:80]}) — "
+                    f"reutilizo el de {previo['fecha']} ({previo['ia']})")
+                return previo
+        except Exception:  # noqa: BLE001
+            pass
     log(f"⚠ Ranking IA no disponible ({ultimo_error}) — el dashboard usará el heurístico")
     return None
 
