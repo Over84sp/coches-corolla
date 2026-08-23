@@ -31,7 +31,9 @@ jobs:
       - name: Ejecutar scraper
         run: python scraper.py
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IA_API_KEY: ${{ secrets.IA_API_KEY }}
+          IA_MODEL: ${{ secrets.IA_MODEL }}
+          IA_URL: ${{ secrets.IA_URL }}
 
       - name: Volcar resumen al job summary
         if: always()

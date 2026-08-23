@@ -239,14 +239,15 @@ def fmt_row(a: dict) -> str:
             f"     🔗 {a['url']}")
 
 
-MODELO_IA = "openai/gpt-4o-mini"
-URL_IA = "https://models.github.ai/inference/chat/completions"
+MODELO_IA = os.environ.get("IA_MODEL") or "llama-3.1-8b-instant"
+URL_IA = os.environ.get("IA_URL") or "https://api.groq.com/openai/v1/chat/completions"
 
 
 def ai_ranking(coches: list, now_iso: str):
-    """Pide a GitHub Models (IA gratuita de GitHub, vía GITHUB_TOKEN del workflow)
-    un ranking de mejores oportunidades. Devuelve None si no hay token o falla."""
-    tok = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    """Ranking de oportunidades. Si existe el secret IA_API_KEY (OpenAI-compatible:
+    Groq gratis, OpenAI, OpenRouter…) usa un LLM real; si no, devuelve None y el
+    dashboard usa su ranking heurístico integrado."""
+    tok = os.environ.get("IA_API_KEY") or os.environ.get("GITHUB_TOKEN")
     if not tok or not coches:
         return None
     lineas = ["id|precio|año|km|CV|versión|lugar|vendedor|valoración"]

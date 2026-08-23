@@ -136,8 +136,20 @@ function mapaRanking(){
     const res=ys.map((y,i)=>y-(a*xs[i]+b));
     const sd=Math.sqrt(res.reduce((s,r)=>s+r*r,0)/n)||1;
     g.forEach((c,i)=>{
-      let s=50-(res[i]/sd)*15 + (parseFloat(c.rating)>=4.5?3:0);
-      m[c.id]={pos:0, score:Math.max(2,Math.min(98,Math.round(s)))};
+      const ratio=res[i]/sd;
+      let s=50-ratio*15 + (parseFloat(c.rating)>=4.5?3:0);
+      const anyos=Math.max(1,2026-(c.anyo||2026)+1);
+      const kmAno=Math.round((c.km||0)/anyos);
+      const partes=[];
+      if(ratio<=-1) partes.push('precio muy por debajo de la tendencia de su grupo');
+      else if(ratio<-.3) partes.push('más barato que la tendencia de su grupo');
+      else if(ratio>1.5) partes.push('por encima del precio típico');
+      if(kmAno<14000 && (c.km||0)>5000) partes.push(`${kmAno.toLocaleString('es-ES')} km/año, uso bajo`);
+      if(parseFloat(c.rating)>=4.5) partes.push(`vendedor ⭐${c.rating}`);
+      const dias=(Date.now()-new Date(c.publicado||0).getTime())/864e5;
+      if(dias>=0 && dias<8) partes.push('recién publicado');
+      m[c.id]={pos:0, score:Math.max(2,Math.min(98,Math.round(s))),
+               com:partes.join(' · ')||'en la media de su grupo'};
     });
   });
   const top = Object.entries(m).sort((x,y)=>y[1].score-x[1].score).slice(0,12)
