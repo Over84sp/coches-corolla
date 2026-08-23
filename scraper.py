@@ -319,10 +319,10 @@ def ai_ranking(coches: list, now_iso: str):
               "reputación del vendedor y coherencia del anuncio). Formato exacto:\n"
               '{"ranking":[{"id":"<id>","score":<0-100>,"comentario":"máx 85 caracteres, concreto"}]}\n'
               "Inventario:\n" + "\n".join(lineas))
-    payload = json.dumps({
+    payload = {
         "model": MODELO_IA, "temperature": 0.2, "max_tokens": 1300,
         "messages": [{"role": "system", "content": sysmsg},
-                     {"role": "user", "content": usrmsg}]}).encode()
+                     {"role": "user", "content": usrmsg}]}
     try:
         estado, out = _curl_json(url_ia, payload=payload, token=tok, timeout=90)
         if estado != "200" or not isinstance(out, dict):
