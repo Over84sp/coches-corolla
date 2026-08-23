@@ -356,12 +356,13 @@ def main() -> int:
     # Resumen para GitHub Actions (job summary) — novedades + rebajas + inventario completo
     summary = Path(__file__).resolve().parent / "resumen.md"
     n_new_anuncios = sum(len(g) for g in new_groups)
+    palabra = "coche" if len(new_groups) == 1 else "coches"
     lines = [f"# Corolla TS ≥{MIN_YEAR} · ≥{MIN_HP} CV — {now_iso}",
              f"Descargados: **{len(raw_ads)}** · Tras filtros: **{len(matched)}** anuncios · "
-             f"Nuevos: **{len(new_groups)}** coches ({n_new_anuncios} anuncios) · "
+             f"Nuevos: **{len(new_groups)}** {palabra} ({n_new_anuncios} anuncios) · "
              f"Rebajas: **{len(drop_groups)}**", ""]
     if new_groups:
-        lines += [f"## 🆕 Nuevos ({len(new_groups)} coches)", "",
+        lines += [f"## 🆕 Nuevos ({len(new_groups)} {palabra})", "",
                   "| Precio | Año | km | CV | Lugar | Tipo | Título |",
                   "|---:|---:|---:|---:|---|---|---|"]
         for g in sorted(new_groups, key=lambda g: g[0]["price"]):
