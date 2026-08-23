@@ -79,6 +79,10 @@
   <div class="card"><h3>Año de matriculación</h3><div id="c4"></div></div>
   <div class="card"><h3>Coches nuevos por día 🆕</h3><div id="c5"></div></div>
   <div class="card"><h3>Precio del inventario: mín · mediano · medio 📈</h3><div id="c6"></div></div>
+  <div class="card"><h3>Mediana por modelo en el tiempo 📉</h3><div id="c7"></div></div>
+  <div class="card"><h3>Depreciación por año de matrícula 🕰️</h3><div id="c8"></div></div>
+  <div class="card"><h3>🎯 Objetivos de compra</h3><div id="c9"></div></div>
+  <div class="card"><h3>Velocidad de mercado (vendidos) ⏱️</h3><div id="c10"></div></div>
 </div>
 
 <div class="rankwrap card" id="rankSec" style="padding-bottom:14px"></div>
@@ -306,6 +310,110 @@ function c6(){
   box.innerHTML=s;
 }
 
+const COLMOD = {'140H':'#7ee787','180H':'#4cc2ff','200H':'#ffb86c','Otro':'#9aa7bd'};
+
+/* ─── c7: mediana por modelo en el tiempo ─── */
+function c7(){
+  const Hm=DATA.historicoModelos||[];
+  const box=document.getElementById('c7');
+  if(Hm.length<4){box.innerHTML='<p class=mini>se dibujará con las próximas tiradas (una línea por modelo)</p>';return}
+  const fechas=[...new Set(Hm.map(h=>h.fecha))].sort();
+  const modelos=[...new Set(Hm.map(h=>h.modelo))];
+  const pt={};            // modelo → {fecha: mediano}
+  Hm.forEach(h=>{(pt[h.modelo]=pt[h.modelo]||{})[h.fecha]=h.mediano});
+  const vals=Hm.map(h=>h.mediano), mn=Math.min(...vals), mx=Math.max(...vals);
+  const W=420,H=190,pad=34;
+  const X=i=>36+(W-46)*(i/Math.max(1,fechas.length-1));
+  const Y=p=>H-pad+4-(H-pad-16)*((p-mn)/Math.max(1,mx-mn));
+  let s=svgEl(W,H);
+  s+=`<line x1=${X(0)} y1=${Y(mn)} x2=${X(fechas.length-1)} y2=${Y(mn)} stroke=#1d2740 stroke-dasharray=3 4/>`;
+  s+=`<text x=4 y=${Y(mn)+3} fill=#9aa7bd font-size=9>${(mn/1000)|0}k</text><text x=4 y=${Y(mx)+3} fill=#9aa7bd font-size=9>${(mx/1000)|0}k</text>`;
+  modelos.forEach(m=>{
+    let path='';
+    fechas.forEach((f,i)=>{ if(pt[m][f]!=null) path+=(path?'L':'M')+X(i).toFixed(1)+' '+Y(pt[m][f]).toFixed(1)+' '});
+    s+=`<path d="${path}" fill=none stroke=${COLMOD[m]||'#9aa7bd'} stroke-width=2 stroke-linejoin=round/>`;
+  });
+  const ley=modelos.map(m=>`<tspan fill=${COLMOD[m]||'#9aa7bd'}>■ ${m}</tspan>`).join(' ');
+  s+=`<text x=${W-6} y=14 fill=#9aa7bd font-size=9 text-anchor=end>${ley}</text></svg>`;
+  box.innerHTML=s;
+}
+
+/* ─── c8: mediana de precio por año de matrícula, por modelo ─── */
+function c8(I){
+  const box=document.getElementById('c8');
+  if(!I.length){box.innerHTML='<p class=mini>sin coches con estos filtros</p>';return}
+  const M={};                       // año → modelo → precios
+  I.forEach(c=>{const m=versionDe(c);(M[c.anyo]=M[c.anyo]||{})[m]=(M[c.anyo][m]||[]).concat(c.precio)});
+  const años=Object.keys(M).sort();
+  const modelos=[...new Set(I.map(versionDe))];
+  const med=(a,m)=>{const ps=(M[a]||{})[m];if(!ps)return null;ps.sort((x,y)=>x-y);return ps[ps.length>>1]};
+  const vals=[]; años.forEach(a=>modelos.forEach(m=>{const v=med(a,m);if(v!=null)vals.push(v)}));
+  const mn=Math.min(...vals), mx=Math.max(...vals);
+  const W=420,H=190,pad=34;
+  const X=i=>36+(W-46)*(i/Math.max(1,años.length-1));
+  const Y=p=>H-pad+4-(H-pad-16)*((p-mn)/Math.max(1,mx-mn));
+  let s=svgEl(W,H);
+  modelos.forEach(m=>{
+    let path='',pto=false;
+    años.forEach((a,i)=>{const v=med(a,m);
+      if(v!=null){const c=`${X(i).toFixed(1)} ${Y(v).toFixed(1)}`;path+=(pto?'L':'M')+c+' ';pto=true;
+        s+=`<circle cx=${X(i).toFixed(1)} cy=${Y(v).toFixed(1)} r=3.5 fill=${COLMOD[m]||'#9aa7bd'}><title>${m} ${a}: ${fmtE(v)} (${(M[a][m]||[]).length} coches)</title></circle>`}});
+    if(pto)s+=`<path d="${path}" fill=none stroke=${COLMOD[m]||'#9aa7bd'} stroke-width=2 stroke-linejoin=round opacity=.85/>`;
+  });
+  años.forEach((a,i)=>{ if(i%Math.ceil(años.length/7)===0) s+=`<text x=${X(i)} y=${H-pad+14} fill=#9aa7bd font-size=9 text-anchor=middle>${a}</text>`});
+  s+=`<line x1=30 y1=${Y(mn)} x2=${W-8} y2=${Y(mn)} stroke=#1d2740 stroke-dasharray=3 4/>`;
+  const ley=modelos.map(m=>`<tspan fill=${COLMOD[m]||'#9aa7bd'}>■ ${m}</tspan>`).join(' ');
+  s+=`<text x=${W-6} y=14 fill=#9aa7bd font-size=9 text-anchor=end>${ley}</text></svg>`;
+  box.innerHTML=s;
+}
+
+/* ─── c9: objetivos de compra ─── */
+function c9(I){
+  const box=document.getElementById('c9');
+  const objs=DATA.objetivos||[];
+  if(!objs.length){box.innerHTML='<p class=mini>sin datos</p>';return}
+  const en_rango = m => I.filter(c=>versionDe(c)===m);
+  let html='<table style="width:100%;font-size:13.5px;border:none">';
+  objs.forEach(o=>{
+    const sel=en_rango(o.modelo);
+    const min=sel.length?Math.min(...sel.map(c=>c.precio)):null;
+    const dist=min!=null?Math.round((min-o.objetivo)/o.objetivo*100):null;
+    const color=dist!=null&&dist<=0?'#7ee787':(dist!=null&&dist<15?'#ffb86c':'#ff7b72');
+    html+=`<tr style="border:none"><td style="padding:5px 0;border-top:1px solid #1d2740"><b style="color:${COLMOD[o.modelo]||'#fff'}">${o.modelo}</b></td>`+
+      `<td class=num style="border-top:1px solid #1d2740">🎯 <b>${fmtE(o.objetivo)}</b></td>`+
+      `<td class=num style="border-top:1px solid #1d2740">mín. actual <b>${fmtE(min)}</b></td>`+
+      `<td class=num style="border-top:1px solid #1d2740;color:${color}">${dist==null?'—':(dist<=0?'¡conseguido!':'+'+dist+'%')}</td></tr>`;
+  });
+  html+='</table>';
+  box.innerHTML=html+'<p class=mini style="margin:6px 0 0">🎯 = percentil 10 del mercado (editable: OBJETIVOS en scraper.py). Los coches por debajo llevan bandera 🎯 en la tabla.</p>';
+}
+
+/* ─── c10: velocidad de mercado ─── */
+function c10(){
+  const box=document.getElementById('c10');
+  const S=DATA.salidas||[];
+  if(!S.length){box.innerHTML='<p class=mini>aún sin salidas detectadas — en cuanto los coches empiecen a venderse (desaparecer 4+ días) aparecerán aquí</p>';return}
+  const hace30=new Date(Date.now()-30*864e5).toISOString().slice(0,10);
+  const rec=S.filter(x=>x.fecha>=hace30);
+  const mediana=a=>{const v=a.filter(x=>x>0).sort((x,y)=>x-y);return v.length?v[v.length>>1]:null};
+  const dias=mediana(rec.map(x=>x.dias)), precio=mediana(rec.map(x=>x.precio));
+  const porSem={};
+  rec.forEach(x=>{const s=x.fecha.slice(0,10);const sem=new Date((new Date(s)).getTime()-((new Date(s)).getDay())*864e5).toISOString().slice(0,10);porSem[sem]=(porSem[sem]||0)+1});
+  const semanas=Object.entries(porSem).sort();
+  const W=420,H=110,pad=22,mx=Math.max(1,...semanas.map(x=>x[1]));
+  let s=svgEl(W,H);
+  const bw=(W-30)/Math.max(1,semanas.length);
+  semanas.forEach(([sem,n],i)=>{
+    const h=(H-pad-8)*(n/mx);
+    s+=`<rect x=${12+i*bw} y=${H-pad-h} width=${Math.max(4,bw-4)} height=${h} rx=2 fill=#4cc2ff opacity=.8><title>sem ${sem}: ${n} salidas</title></rect>`;
+  });
+  s+=`<line x1=8 y1=${H-pad} x2=${W-8} y2=${H-pad} stroke=#26304d/></svg>`;
+  box.innerHTML=`<div style="display:flex;gap:14px;margin-bottom:6px">`+
+    `<div><div class=v style="font-size:19px;font-weight:700;color:var(--ac)">${rec.length}</div><div class=mini>salidas 30 días</div></div>`+
+    `<div><div class=v style="font-size:19px;font-weight:700;color:var(--warn)">${dias??'—'} d</div><div class=mini>mediana en venta</div></div>`+
+    `<div><div class=v style="font-size:19px;font-weight:700;color:var(--ok)">${precio?fmtE(precio):'—'}</div><div class=mini>mediana de salida</div></div></div>`+s;
+}
+
 /* ─── ranking ─── */
 function rankingSec(I){
   const box=document.getElementById('rankSec');
@@ -341,7 +449,10 @@ function filaCoche(c){
   const extra=c.urls.slice(1).map((u,i)=>` <a href="${u}">·${i+2}ª</a>`).join('');
   const marks=(c.nuevo?'<span class=nuevo>🆕</span> ':'')+(c.rebajado?'<span class=baja>📉</span> ':'')+(c.n>1?`<span class=tag>×${c.n}</span>`:'');
   const r=RANK.m[c.id];
-  const badge=(r&&r.pos)?`<span class=rkn title="puntuación ${r.score}">🏆${r.pos}</span>`:'';
+  const obj=(DATA.objetivos||[]).find(o=>o.modelo===versionDe(c));
+  const target=(obj&&obj.objetivo)||Infinity;
+  const badge=((r&&r.pos)?`<span class=rkn title="puntuación ${r.score}">🏆${r.pos}</span>`:'')+
+              (c.precio<=target?`<span class=rkn title="bajo tu objetivo de compra" style="color:var(--ok)">🎯</span>`:'');
   return `<tr><td class=num><b>${fmtE(c.precio)}</b></td><td class=num>${c.anyo}</td><td class=num>${fmtN(c.km)}</td>`+
     `<td class=num>${c.cv}</td><td>${badge}<a href="${c.url}">${esc(c.titulo)}</a>${extra} ${marks}<div class=mini>${trimDe(c.titulo)}${c.publicado?' · publicado '+c.publicado:''}</div></td>`+
     `<td>${esc(c.lugares)}</td><td class=mini>${esc(c.vendedor||'—')}${c.rating?' ⭐'+c.rating:''}</td><td class=mini>${c.visto}</td></tr>`;
@@ -391,7 +502,7 @@ function refresco(){
   const vistas=['lista','modelo','acabado'];
   document.querySelectorAll('#fVista .chip').forEach((b,i)=>b.classList.toggle('on',F.vista===vistas[i]));
   const I=filtrar();
-  kpis(I);c1(I);c2(I);c3(I);c4(I);c5(I);c6();rankingSec(I);tabla(I);
+  kpis(I);c1(I);c2(I);c3(I);c4(I);c5(I);c6();c7();c8(I);c9(I);c10();rankingSec(I);tabla(I);
 }
 
 /* ─── arranque ─── */

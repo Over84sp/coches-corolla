@@ -39,6 +39,8 @@ MAX_PAGES = 6          # páginas por tirada (35 anuncios/página) — robots.tx
 DELAY_S = 6.0          # segundos entre peticiones + jitter (cortesía / anti rate-limit)
 INV_DAYS = 14          # días que un anuncio visto permanece en el "inventario" del resumen
 PRUNE_DAYS = 30        # días antes de olvidar un anuncio del estado (seen.json)
+OBJETIVOS = {"140H": None, "180H": None, "200H": None}  # € objetivo de compra por
+                       # modelo; None = automático (percentil 10 del mercado actual)
 TIMEOUT_S = 30
 USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
               "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
@@ -410,7 +412,8 @@ def version_de(titulo: str, hp) -> str:
     return {140: "140H", 178: "200H", 180: "180H", 184: "180H", 196: "200H"}.get(hp, f"{hp} CV")
 
 
-def write_site(inv_groups, inv_ads_count, new_group_ids, drop_group_ids, now_iso) -> None:
+def write_site(inv_groups, inv_ads_count, new_group_ids, drop_group_ids, now_iso,
+               merged) -> None:
     """Genera docs/index.html (dashboard) inyectando los datos en docs/plantilla.html."""
     import statistics
     site_dir = Path(__file__).resolve().parent / "docs"
@@ -470,9 +473,98 @@ def write_site(inv_groups, inv_ads_count, new_group_ids, drop_group_ids, now_iso
 
     ranking = ai_ranking(inventario, now_iso)
 
+    # ── histórico por modelo (una fila por tirada y modelo) ──
+    por_modelo = {}
+    for c in inventario:
+        por_modelo.setdefault(c["modelo"], []).append(c["precio"])
+    mod_file = STATE_DIR / "historico_modelos.csv"
+    filas_mod = []
+    if mod_file.exists():
+        for row in csv.DictReader(mod_file.open(encoding="utf-8")):
+            try:
+                filas_mod.append([row["fecha"], row["modelo"], int(row["n"]),
+                                  int(row["minimo"]), int(row["mediano"]), int(row["medio"])])
+            except (KeyError, ValueError):
+                pass
+    hoy_fila = now_iso[:16]
+    filas_mod = [f for f in filas_mod if f[0] != hoy_fila]
+    for mod, ps in sorted(por_modelo.items()):
+        ps2 = sorted(ps)
+        filas_mod.append([hoy_fila, mod, len(ps2), ps2[0],
+                          ps2[len(ps2) // 2], round(statistics.mean(ps2))])
+    with mod_file.open("w", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh)
+        w.writerow(["fecha", "modelo", "n", "minimo", "mediano", "medio"])
+        w.writerows(filas_mod)
+    historico_modelos = [{"fecha": f[0], "modelo": f[1], "n": f[2],
+                          "minimo": f[3], "mediano": f[4], "medio": f[5]} for f in filas_mod]
+
+    # ── salidas estimadas: anuncios no vistos en 4+ días (vendidos o retirados) ──
+    salidas_file = STATE_DIR / "salidas.csv"
+    ya_salidas, salidas_todas = set(), []
+    if salidas_file.exists():
+        for row in csv.DictReader(salidas_file.open(encoding="utf-8")):
+            ya_salidas.add(row.get("id"))
+            try:
+                salidas_todas.append({"fecha": row["fecha_salida"], "modelo": row["modelo"],
+                                      "precio": int(row["precio"] or 0),
+                                      "dias": int(row["dias_en_venta"] or 0)})
+            except (KeyError, ValueError):
+                pass
+    primer_dia = {}
+    if CSV_FILE.exists():
+        for row in csv.DictReader(CSV_FILE.open(encoding="utf-8")):
+            primer_dia[row.get("id")] = (row.get("first_seen") or "")[:10]
+    ids_hoy = {c["id"] for c in inventario}
+    corte = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=4)).strftime("%Y-%m-%d")
+    nuevas_salidas = []
+    for v in merged.values():
+        fid = str(v.get("id") or "")
+        if fid in ids_hoy or fid in ya_salidas:
+            continue
+        ultimo = (v.get("last_seen") or "")[:10]
+        if not (ultimo and ultimo <= corte):
+            continue
+        dias = ""
+        f0 = primer_dia.get(fid, "")
+        if f0:
+            try:
+                dias = (dt.datetime.strptime(ultimo, "%Y-%m-%d")
+                        - dt.datetime.strptime(f0, "%Y-%m-%d")).days
+            except ValueError:
+                pass
+        nuevas_salidas.append([ultimo, fid, version_de(v.get("title", ""), v.get("hp")),
+                               v.get("price") or "", dias])
+    if nuevas_salidas:
+        sin_cabecera = not salidas_file.exists()
+        with salidas_file.open("a", newline="", encoding="utf-8") as fh:
+            w = csv.writer(fh)
+            if sin_cabecera:
+                w.writerow(["fecha_salida", "id", "modelo", "precio", "dias_en_venta"])
+            w.writerows(nuevas_salidas)
+        for f in nuevas_salidas:
+            try:
+                salidas_todas.append({"fecha": f[0], "modelo": f[2],
+                                      "precio": int(f[3] or 0), "dias": int(f[4] or 0)})
+            except ValueError:
+                pass
+
+    # ── objetivos de compra (percentil 10 automático si no hay valor fijo) ──
+    def _pct(precios, p):
+        s = sorted(precios)
+        return s[max(0, min(len(s) - 1, int(round(p * (len(s) - 1)))))]
+
+    objetivos = []
+    for mod, ps in sorted(por_modelo.items()):
+        obj = OBJETIVOS.get(mod) or _pct(ps, 0.10)
+        objetivos.append({"modelo": mod, "objetivo": obj, "minimo": min(ps),
+                          "debajo": sum(1 for x in ps if x <= obj)})
+
     datos = {"actualizado": now_iso, "config": f"≥{MIN_YEAR} · ≥{MIN_HP} CV",
              "anuncios": inv_ads_count, "rebajas": len(drop_group_ids),
-             "inventario": inventario, "historico": historico, "rankingIA": ranking}
+             "inventario": inventario, "historico": historico, "rankingIA": ranking,
+             "historicoModelos": historico_modelos, "salidas": salidas_todas,
+             "objetivos": objetivos}
     html = plantilla.read_text(encoding="utf-8").replace(
         "/*DATOS*/null", json.dumps(datos, ensure_ascii=False))
     (site_dir / "index.html").write_text(html, encoding="utf-8")
@@ -647,7 +739,7 @@ def main() -> int:
     summary.write_text("\n".join(lines), encoding="utf-8")
 
     try:
-        write_site(inv_groups, len(inv_ads), new_group_ids, drop_group_ids, now_iso)
+        write_site(inv_groups, len(inv_ads), new_group_ids, drop_group_ids, now_iso, merged)
     except Exception as exc:  # noqa: BLE001 — el dashboard nunca debe romper el scraper
         log(f"⚠ No se pudo generar el dashboard: {exc}")
 
