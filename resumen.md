@@ -1,5 +1,5 @@
-# Corolla TS ≥2022 · ≥140 CV — 2026-08-23 21:24 UTC
-Descargados: **103** · Tras filtros: **47** anuncios · Nuevos: **0** coches (0 anuncios) · Rebajas: **0**
+# Corolla TS ≥2022 · ≥140 CV — 2026-08-23 21:45 UTC
+Descargados: **171** · Tras filtros: **70** anuncios · Nuevos: **0** coches (0 anuncios) · Rebajas: **0**
 
 
 ## 🚗 Inventario completo (65 coches · 75 anuncios)
