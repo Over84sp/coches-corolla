@@ -53,15 +53,31 @@ def fetch_html(url: str, retries: int = 3) -> str:
         try:
             req = urllib.request.Request(url, headers={
                 "User-Agent": USER_AGENT,
-                "Accept": "text/html,application/xhtml+xml",
-                "Accept-Language": "es-ES,es;q=0.9",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+                "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
                 "Accept-Encoding": "gzip",
+                "Cache-Control": "no-cache",
+                "Pragma": "no-cache",
+                "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+                "Sec-Ch-Ua-Mobile": "?0",
+                "Sec-Ch-Ua-Platform": '"Windows"',
+                "Sec-Fetch-Dest": "document",
+                "Sec-Fetch-Mode": "navigate",
+                "Sec-Fetch-Site": "none",
+                "Sec-Fetch-User": "?1",
+                "Upgrade-Insecure-Requests": "1",
             })
             with urllib.request.urlopen(req, timeout=TIMEOUT_S) as resp:
                 raw = resp.read()
                 if resp.headers.get("Content-Encoding") == "gzip":
                     raw = gzip.GzipFile(fileobj=io.BytesIO(raw)).read()
-                return raw.decode("utf-8", "ignore")
+                html = raw.decode("utf-8", "ignore")
+                STATE_DIR.mkdir(exist_ok=True)
+                (STATE_DIR / "ultima_respuesta.html").write_text(
+                    f"URL: {url}\nHTTP: {resp.status}\n"
+                    + "\n".join(f"{k}: {v}" for k, v in resp.headers.items())
+                    + f"\n\n{html[:3000]}", encoding="utf-8")
+                return html
         except Exception as exc:  # noqa: BLE001
             last_exc = exc
             log(f"  [!] intento {attempt}/{retries} fallido: {exc}")
@@ -73,7 +89,10 @@ def parse_listings(html: str) -> dict:
     """Extrae initialResults del JSON embebido en la página."""
     m = RE_PROPS.search(html)
     if not m:
-        raise RuntimeError("No se encontró window.__INITIAL_PROPS__ (¿cambio de maquetación?)")
+        snippet = re.sub(r"\s+", " ", html[:400])
+        raise RuntimeError(
+            "No se encontró window.__INITIAL_PROPS__ (¿cambio de maquetación o bloqueo anti-bot?). "
+            f"Inicio del HTML recibido: {snippet}")
     data = json.loads(json.loads('"' + m.group(1) + '"'))
     return data["initialResults"]
 
