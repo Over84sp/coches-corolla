@@ -239,17 +239,54 @@ def fmt_row(a: dict) -> str:
             f"     🔗 {a['url']}")
 
 
-MODELO_IA = os.environ.get("IA_MODEL") or "llama-3.1-8b-instant"
-URL_IA = os.environ.get("IA_URL") or "https://api.groq.com/openai/v1/chat/completions"
+# Auto-detección de proveedor por prefijo de la key:
+#   xai-  → Grok (x.ai) · gsk_ → Groq · sk- → OpenAI · sk_or_ → OpenRouter
+PROVEEDORES = {
+    "xai-":  ("https://api.x.ai/v1",       ["grok-4-fast-non-reasoning", "grok-4-fast",
+                                             "grok-3-mini", "grok-3"]),
+    "gsk_":  ("https://api.groq.com/openai/v1", ["llama-3.1-8b-instant", "llama-3.1-8b"]),
+    "sk_or_": ("https://openrouter.ai/api/v1",  ["meta-llama/llama-3.1-8b-instruct:free"]),
+    "sk-":   ("https://api.openai.com/v1", ["gpt-4o-mini", "gpt-4.1-mini"]),
+}
+
+
+def _resolver_ia():
+    """Devuelve (url_chat, modelo, key) según la key y los overrides por env."""
+    key = (os.environ.get("IA_API_KEY") or "").strip()
+    if not key:
+        return None
+    base, preferidas = "https://api.groq.com/openai/v1", ["llama-3.1-8b-instant"]
+    for prefijo, (b, modelos) in PROVEEDORES.items():
+        if key.lower().startswith(prefijo):
+            base, preferidas = b, modelos
+            break
+    if os.environ.get("IA_URL"):
+        base = os.environ["IA_URL"].rstrip("/")
+    url = base + "/chat/completions"
+    modelo = os.environ.get("IA_MODEL") or preferidas[0]
+    # si no hay override de modelo, intenta elegir uno realmente disponible
+    if not os.environ.get("IA_MODEL"):
+        try:
+            req = urllib.request.Request(base + "/models",
+                                         headers={"Authorization": f"Bearer {key}"})
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                ids = [m.get("id", "") for m in json.loads(resp.read().decode())]
+            for pref in preferidas + ids:
+                if any(pref in i for i in ids):
+                    modelo = next(i for i in ids if pref in i)
+                    break
+        except Exception:  # noqa: BLE001 — si falla, usamos el preferido por defecto
+            pass
+    return url, modelo, key
 
 
 def ai_ranking(coches: list, now_iso: str):
-    """Ranking de oportunidades. Si existe el secret IA_API_KEY (OpenAI-compatible:
-    Groq gratis, OpenAI, OpenRouter…) usa un LLM real; si no, devuelve None y el
-    dashboard usa su ranking heurístico integrado."""
-    tok = os.environ.get("IA_API_KEY") or os.environ.get("GITHUB_TOKEN")
-    if not tok or not coches:
+    """Ranking de oportunidades con LLM (si hay IA_API_KEY). Devuelve None si no
+    hay key o falla, y entonces el dashboard usa su heurístico integrado."""
+    ia = _resolver_ia()
+    if not ia or not coches:
         return None
+    url_ia, MODELO_IA, tok = ia
     lineas = ["id|precio|año|km|CV|versión|lugar|vendedor|valoración"]
     for c in coches[:80]:
         lineas.append(f"{c['id']}|{c['precio']}€|{c['anyo']}|{c['km']}|{c['cv']}|"
@@ -266,7 +303,7 @@ def ai_ranking(coches: list, now_iso: str):
         "model": MODELO_IA, "temperature": 0.2, "max_tokens": 1300,
         "messages": [{"role": "system", "content": sysmsg},
                      {"role": "user", "content": usrmsg}]}).encode()
-    req = urllib.request.Request(URL_IA, data=payload, headers={
+    req = urllib.request.Request(url_ia, data=payload, headers={
         "Authorization": f"Bearer {tok}", "Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=90) as resp:
@@ -282,6 +319,10 @@ def ai_ranking(coches: list, now_iso: str):
             return None
         log(f"✔ Ranking IA generado ({MODELO_IA}, {len(ranking)} coches)")
         return {"fecha": now_iso, "ia": MODELO_IA, "ranking": ranking}
+    except urllib.error.HTTPError as exc:
+        cuerpo = exc.read()[:180].decode("utf-8", "ignore")
+        log(f"⚠ Ranking IA no disponible (HTTP {exc.code}: {cuerpo}) — dashboard heurístico")
+        return None
     except Exception as exc:  # noqa: BLE001 — la IA nunca debe romper el scraper
         log(f"⚠ Ranking IA no disponible ({str(exc)[:90]}) — el dashboard usará el heurístico")
         return None
