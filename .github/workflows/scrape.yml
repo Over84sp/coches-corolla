@@ -58,6 +58,8 @@ jobs:
       cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main          # punta actual: incluye el commit de estado que acaba de hacer el scraper
 
       - name: Habilitar Pages (idempotente; falla silenciosamente si el repo es privado)
         continue-on-error: true
