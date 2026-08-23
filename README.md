@@ -60,6 +60,11 @@ Otros listados útiles: `.../hibrido/`, `.../automatico/`, por provincia
 - GitHub **desactiva los cron de repos sin actividad a los 60 días**; con hacer
   cualquier push o ejecutar el workflow a mano se reactiva.
 - La hora de los cron es UTC (`06:30` y `18:30`); en invierno serán 07:30/19:30.
-- Uso respetuoso: 12 peticiones/día máximo, con User-Agent identificable y
-  retardo entre peticiones. Si algún día la web cambia de maquetación, el script
-  fallará con un error claro en el log de Actions en vez de corromper el estado.
+- **coches.net aplica rate-limit/anti-bot**: la descarga se hace con `curl`
+  (urllib recibe página de bloqueo desde los datacenters de GitHub). Si aun así
+  se corta (pasa sobre la 6ª petición rápida), la tirada termina con lo recogido
+  y el estado queda intacto — la siguiente tirada recupera novedades por dedupeo.
+  Con `MAX_PAGES = 5` (~175 anuncios cubiertos) no suele pasar.
+- Uso respetuoso: ~10 peticiones/día máximo, con retardo entre peticiones.
+  Si la web cambiara de maquetación, el script fallará con error claro en el
+  log de Actions en vez de corromper el estado (mira `.data/ultima_respuesta.html`).

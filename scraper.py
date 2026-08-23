@@ -31,7 +31,8 @@ MIN_YEAR = 2022        # año mínimo del vehículo
 MIN_HP = 140           # potencia mínima (CV)
 MAX_KM = None          # p. ej. 120000, o None para sin límite
 MAX_PRICE = None       # p. ej. 25000, o None para sin límite
-MAX_PAGES = 6          # tope de páginas (35 anuncios/página) — robots.txt desaconseja pg≥7
+MAX_PAGES = 5          # páginas por tirada (35 anuncios/página). coches.net corta en
+                       # torno a la 6ª petición seguida, así que 5 es el punto dulce
 DELAY_S = 5.0          # segundos entre peticiones + jitter (cortesía / anti rate-limit)
 TIMEOUT_S = 30
 USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
