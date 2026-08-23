@@ -349,7 +349,12 @@ def ai_ranking(coches: list, now_iso: str):
         if not contenido.startswith("{"):
             m = re.search(r"\{[\s\S]*\}", contenido)   # primer bloque JSON
             contenido = m.group(0) if m else ""
-        ranking = json.loads(contenido).get("ranking", [])
+        try:
+            ranking = json.loads(contenido).get("ranking", [])
+        except json.JSONDecodeError:
+            raise RuntimeError(
+                f"contenido={contenido[:110]!r} · claves_resp={list(out)[:6]} "
+                f"· claves_msg={list(msg)[:6]} · estado={estado}")
         ids_validos = {c["id"] for c in coches}
         ranking = [{"id": str(r.get("id", "")), "score": int(r.get("score", 50)),
                     "comentario": str(r.get("comentario", ""))[:100]}
