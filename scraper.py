@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Scraper ligero de coches.net — Toyota Corolla Touring Sports 2022+ · 160 CV+
+Scraper ligero de coches.net — Toyota Corolla Touring Sports 2022+ · 140 CV+
 
 - 1 listado por ejecución (hasta MAX_PAGES peticiones de 35 anuncios, con retardo).
 - Filtros en servidor por URL (marca/modelo/carrocería); año y CV se filtran en local.
@@ -354,6 +354,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
-== "__main__":
     sys.exit(main())
