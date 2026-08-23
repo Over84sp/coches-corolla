@@ -267,10 +267,8 @@ def _resolver_ia():
     # si no hay override de modelo, intenta elegir uno realmente disponible
     if not os.environ.get("IA_MODEL"):
         try:
-            req = urllib.request.Request(base + "/models",
-                                         headers={"Authorization": f"Bearer {key}"})
-            with urllib.request.urlopen(req, timeout=20) as resp:
-                ids = [m.get("id", "") for m in json.loads(resp.read().decode())]
+            estado, cuerpo = _curl_json(base + "/models", token=key, timeout=20)
+            ids = [m.get("id", "") for m in (cuerpo or {}).get("data", [])]
             for pref in preferidas + ids:
                 if any(pref in i for i in ids):
                     modelo = next(i for i in ids if pref in i)
@@ -278,6 +276,28 @@ def _resolver_ia():
         except Exception:  # noqa: BLE001 — si falla, usamos el preferido por defecto
             pass
     return url, modelo, key
+
+
+def _curl_json(url, payload=None, token=None, timeout=90):
+    """POST/GET JSON vía curl (python-urllib se come el 403/1010 de Cloudflare)."""
+    exe = shutil.which("curl")
+    if not exe:
+        raise RuntimeError("curl no disponible")
+    cmd = [exe, "-sS", "--compressed", "--max-time", str(timeout),
+           "-w", "\n@@HTTP:%{http_code}", "-H", "Content-Type: application/json"]
+    if token:
+        cmd += ["-H", f"Authorization: Bearer {token}"]
+    if payload is not None:
+        cmd += ["-X", "POST", "-d", json.dumps(payload)]
+    cmd.append(url)
+    out = subprocess.run(cmd, capture_output=True, timeout=timeout + 15).stdout
+    marker = out.rfind(b"\n@@HTTP:")
+    estado = out[marker + 8:].decode("ascii", "ignore").strip() if marker >= 0 else "0"
+    cuerpo = (out[:marker] if marker >= 0 else out).decode("utf-8", "ignore")
+    try:
+        return estado, json.loads(cuerpo)
+    except json.JSONDecodeError:
+        return estado, cuerpo
 
 
 def ai_ranking(coches: list, now_iso: str):
@@ -303,11 +323,10 @@ def ai_ranking(coches: list, now_iso: str):
         "model": MODELO_IA, "temperature": 0.2, "max_tokens": 1300,
         "messages": [{"role": "system", "content": sysmsg},
                      {"role": "user", "content": usrmsg}]}).encode()
-    req = urllib.request.Request(url_ia, data=payload, headers={
-        "Authorization": f"Bearer {tok}", "Content-Type": "application/json"})
     try:
-        with urllib.request.urlopen(req, timeout=90) as resp:
-            out = json.loads(resp.read().decode("utf-8", "ignore"))
+        estado, out = _curl_json(url_ia, payload=payload, token=tok, timeout=90)
+        if estado != "200" or not isinstance(out, dict):
+            raise RuntimeError(f"HTTP {estado}: {str(out)[:150]}")
         contenido = out["choices"][0]["message"]["content"].strip()
         contenido = re.sub(r"^```(json)?|```$", "", contenido.strip(), flags=re.M).strip()
         ranking = json.loads(contenido).get("ranking", [])
