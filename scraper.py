@@ -15,6 +15,7 @@ import datetime as dt
 import gzip
 import io
 import json
+import random
 import re
 import shutil
 import subprocess
@@ -31,7 +32,7 @@ MIN_HP = 140           # potencia mínima (CV)
 MAX_KM = None          # p. ej. 120000, o None para sin límite
 MAX_PRICE = None       # p. ej. 25000, o None para sin límite
 MAX_PAGES = 6          # tope de páginas (35 anuncios/página) — robots.txt desaconseja pg≥7
-DELAY_S = 2.5          # segundos entre peticiones (cortesía)
+DELAY_S = 5.0          # segundos entre peticiones + jitter (cortesía / anti rate-limit)
 TIMEOUT_S = 30
 USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
               "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")
@@ -48,10 +49,13 @@ def log(msg: str) -> None:
     print(msg, flush=True)
 
 
-def fetch_html(url: str, retries: int = 3) -> str:
-    """Descarga la página. Usa curl si está disponible (su fingerprint TLS pasa
-    los filtros anti-bot de coches.net; urllib recibe página de bloqueo en algunos
-    datacenters). Fallback a urllib con reintentos."""
+def fetch_html(url: str, retries: int = 4):
+    """Descarga la página y valida que trae el JSON de datos.
+
+    Usa curl si está disponible (su fingerprint TLS pasa los filtros anti-bot de
+    coches.net; urllib recibe página de bloqueo en algunos datacenters). Si llega
+    la página de bloqueo ("Ups!...") espera cada vez más y reintenta.
+    Devuelve el HTML o None si no se consigue."""
     last_exc = None
     for attempt in range(1, retries + 1):
         try:
@@ -60,12 +64,15 @@ def fetch_html(url: str, retries: int = 3) -> str:
             STATE_DIR.mkdir(exist_ok=True)
             (STATE_DIR / "ultima_respuesta.html").write_text(
                 f"URL: {url}\nHTTP: {status}\n{headers}\n\n{html[:3000]}", encoding="utf-8")
+            if not RE_PROPS.search(html):
+                raise RuntimeError("página de bloqueo anti-bot o maquetación cambiada "
+                                   f"(inicio: {re.sub(r'[^ -~áéíóúñÁÉÍÓÚÑ ]', ' ', html[:150])})")
             return html
         except Exception as exc:  # noqa: BLE001
             last_exc = exc
-            log(f"  [!] intento {attempt}/{retries} fallido: {exc}")
-            time.sleep(5 * attempt)
-    raise RuntimeError(f"No se pudo descargar {url}: {last_exc}")
+            log(f"  [!] intento {attempt}/{retries}: {str(exc)[:120]}")
+            time.sleep(15 * attempt)   # 15s, 30s, 45s, 60s — dejar pasar el rate-limit
+    return None
 
 
 def _fetch_with_curl(url: str):
@@ -113,12 +120,22 @@ def parse_listings(html: str) -> dict:
 
 
 def collect_ads() -> list:
-    """Descarga hasta MAX_PAGES del listado y devuelve los anuncios crudos."""
+    """Descarga hasta MAX_PAGES del listado y devuelve los anuncios crudos.
+    Si una página queda bloqueada tras los reintentos, termina la tirada con lo
+    recogido hasta ese momento (el estado se conserva y la próxima tirada recupera
+    las novedades por dedupeo de IDs)."""
     ads, page = [], 1
     while page <= MAX_PAGES:
         url = BASE_URL + (f"?pg={page}" if page > 1 else "")
         log(f"→ Descargando página {page}: {url}")
-        results = parse_listings(fetch_html(url))
+        html = fetch_html(url)
+        if html is None:
+            if page == 1:
+                log("  [!] La primera página no está accesible; tirada abortada (sin cambios de estado).")
+            else:
+                log(f"  [!] Página {page} bloqueada; sigo con {len(ads)} anuncios ya descargados.")
+            break
+        results = parse_listings(html)
         items = results.get("items", [])
         ads.extend(items)
         total_pages = results.get("totalPages", 1)
@@ -126,7 +143,7 @@ def collect_ads() -> list:
         if page >= total_pages or not items:
             break
         page += 1
-        time.sleep(DELAY_S)
+        time.sleep(DELAY_S + random.uniform(0, 2))
     return ads
 
 
@@ -219,6 +236,16 @@ def main() -> int:
         seen_ids_run.add(a["id"])
         matched.append(a)
     log(f"→ Que cumplen año ≥{MIN_YEAR} y ≥{MIN_HP} CV: {len(matched)}")
+
+    if not matched:
+        # Tirada vacía (bloqueo o sin resultados): NO tocar el estado
+        log("⚠ Sin anuncios esta tirada — el estado y el CSV quedan como estaban.")
+        Path(__file__).resolve().parent.joinpath("resumen.md").write_text(
+            f"# Corolla TS ≥{MIN_YEAR} · ≥{MIN_HP} CV — {now_iso}\n\n"
+            "⚠ Ejecución sin datos (posible bloqueo temporal de coches.net). "
+            "El estado se conserva; la próxima ejecución detectará las novedades igualmente.\n",
+            encoding="utf-8")
+        return 0
 
     seen = load_seen()
     new_ads, price_drops, updated_seen = [], [], {}
