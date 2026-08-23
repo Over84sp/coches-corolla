@@ -307,11 +307,10 @@ def ai_ranking(coches: list, now_iso: str):
     if not ia or not coches:
         return None
     url_ia, MODELO_IA, tok = ia
-    lineas = ["id|precio|año|km|CV|versión|lugar|vendedor|valoración"]
-    for c in coches[:80]:
-        lineas.append(f"{c['id']}|{c['precio']}€|{c['anyo']}|{c['km']}|{c['cv']}|"
-                      f"{c['titulo'][:48]}|{c['lugares'][:28]}|{(c.get('vendedor') or '')[:22]}|"
-                      f"{c.get('rating') or '-'}")
+    lineas = ["id|precio|año|km|CV|versión|lugar|valoración"]
+    for c in coches[:45]:
+        lineas.append(f"{c['id']}|{c['precio']}€|{c['anyo']}|{c['km']}km|{c['cv']}CV|"
+                      f"{c['titulo'][:34]}|{c['lugares'][:18]}|{c.get('rating') or '-'}")
     sysmsg = ("Eres un experto en coches de ocasión Toyota Corolla Touring Sports híbridos. "
               "Respondes SOLO con JSON válido, sin texto adicional.")
     usrmsg = ("Analiza este inventario y haz un ranking de las 12 MEJORES oportunidades "
@@ -320,13 +319,13 @@ def ai_ranking(coches: list, now_iso: str):
               '{"ranking":[{"id":"<id>","score":<0-100>,"comentario":"máx 85 caracteres, concreto"}]}\n'
               "Inventario:\n" + "\n".join(lineas))
     payload = {
-        "model": MODELO_IA, "temperature": 0.2, "max_tokens": 1300,
+        "model": MODELO_IA, "temperature": 0.2, "max_tokens": 900,
         "messages": [{"role": "system", "content": sysmsg},
                      {"role": "user", "content": usrmsg}]}
     try:
         estado, out = _curl_json(url_ia, payload=payload, token=tok, timeout=90)
         if estado != "200" or not isinstance(out, dict):
-            raise RuntimeError(f"HTTP {estado}: {str(out)[:150]}")
+            raise RuntimeError(f"[{MODELO_IA}] HTTP {estado}: {str(out)[:150]}")
         contenido = out["choices"][0]["message"]["content"].strip()
         contenido = re.sub(r"^```(json)?|```$", "", contenido.strip(), flags=re.M).strip()
         ranking = json.loads(contenido).get("ranking", [])
