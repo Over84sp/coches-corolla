@@ -65,6 +65,8 @@ jobs:
 
       - id: paginas
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
         continue-on-error: true
 
       - uses: actions/upload-pages-artifact@v3
