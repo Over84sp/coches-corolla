@@ -30,6 +30,8 @@ jobs:
 
       - name: Ejecutar scraper
         run: python scraper.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Volcar resumen al job summary
         if: always()
