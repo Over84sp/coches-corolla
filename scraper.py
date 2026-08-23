@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Scraper ligero de coches.net — Toyota Corolla Touring Sports 2022+ · 140 CV+
+Scraper ligero de coches.net — Toyota Corolla Touring Sports 2022+ · 160 CV+
 
 - 1 listado por ejecución (hasta MAX_PAGES peticiones de 35 anuncios, con retardo).
 - Filtros en servidor por URL (marca/modelo/carrocería); año y CV se filtran en local.
@@ -28,7 +28,8 @@ from pathlib import Path
 BASE_URL = "https://www.coches.net/toyota/corolla/familiar/segunda-mano/"
 # ¿Provincia? p. ej. ".../segunda-mano/barcelona/" · precio máx: ".../20000_euros/"
 MIN_YEAR = 2022        # año mínimo del vehículo
-MIN_HP = 140           # potencia mínima (CV)
+MIN_HP = 160           # potencia mínima (CV) — igual que la búsqueda manual:
+                       # solo versiones 180H / 196H / 200H (los 140H quedan fuera)
 MAX_KM = None          # p. ej. 120000, o None para sin límite
 MAX_PRICE = None       # p. ej. 25000, o None para sin límite
 MAX_PAGES = 6          # páginas por tirada (35 anuncios/página) — robots.txt de
@@ -193,6 +194,20 @@ CSV_FIELDS = ["id", "first_seen", "published", "title", "price", "year", "km", "
               "seller_rating", "tipo", "url"]
 
 
+def state_passes_filters(v: dict) -> bool:
+    """Aplica los filtros vigentes a un anuncio guardado en el estado
+    (para que el inventario refleje cambios de configuración)."""
+    if v.get("year") is None or v["year"] < MIN_YEAR:
+        return False
+    if v.get("hp") is None or v["hp"] < MIN_HP:
+        return False
+    if MAX_KM is not None and (v.get("km") or 0) > MAX_KM:
+        return False
+    if MAX_PRICE is not None and (v.get("price") or 0) > MAX_PRICE:
+        return False
+    return True
+
+
 def load_seen() -> dict:
     if SEEN_FILE.exists():
         return json.loads(SEEN_FILE.read_text(encoding="utf-8"))
@@ -315,7 +330,8 @@ def main() -> int:
     inventory = sorted(
         (v for v in merged.values()
          if v.get("last_seen", today) >= inv_cutoff
-         and isinstance(v.get("price"), (int, float))),
+         and isinstance(v.get("price"), (int, float))
+         and state_passes_filters(v)),
         key=lambda x: x["price"])
     lines += ["", f"## 🚗 Inventario completo ({len(inventory)})", "",
               "| | Precio | Año | km | CV | Lugar | Tipo | Visto | Título |",
