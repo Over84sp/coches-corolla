@@ -1,0 +1,42 @@
+name: Scraper coches.net
+
+on:
+  schedule:
+    # UTC — 08:30 y 20:30 hora de Madrid en verano (07:30/19:30 en invierno)
+    - cron: "30 6 * * *"
+    - cron: "30 18 * * *"
+  workflow_dispatch: {}   # permite lanzarlo a mano desde la pestaña Actions
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scraper
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Ejecutar scraper
+        run: python scraper.py
+
+      - name: Volcar resumen al job summary
+        if: always()
+        run: cat resumen.md >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+
+      - name: Guardar estado (commit)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .data resumen.md
+          git diff --cached --quiet && echo "Sin cambios que commitear" && exit 0
+          git commit -m "scraper: $(date -u '+%Y-%m-%d %H:%M') UTC"
+          git push
