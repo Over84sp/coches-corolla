@@ -244,7 +244,9 @@ def fmt_row(a: dict) -> str:
 PROVEEDORES = {
     "xai-":  ("https://api.x.ai/v1",       ["grok-4-fast-non-reasoning", "grok-4-fast",
                                              "grok-3-mini", "grok-3"]),
-    "gsk_":  ("https://api.groq.com/openai/v1", ["llama-3.1-8b-instant", "llama-3.1-8b"]),
+    "gsk_":  ("https://api.groq.com/openai/v1",
+              ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "llama-3.1-8b",
+               "llama-3.3-70b", "openai/gpt-oss-20b", "gemma2-9b-it"]),
     "sk_or_": ("https://openrouter.ai/api/v1",
                ["x-ai/grok-4-fast:free", "x-ai/grok-4-fast", "x-ai/grok-3-mini",
                 "x-ai/grok-4-fast-non-reasoning", "deepseek/deepseek-chat-v3.1:free",
@@ -272,14 +274,16 @@ def _resolver_ia():
         try:
             estado, cuerpo = _curl_json(base + "/models", token=key, timeout=20)
             ids = [m.get("id", "") for m in (cuerpo or {}).get("data", [])]
+            no_chat = ("guard", "embed", "whisper", "tts", "vision", "flux", "sdxl")
             exacto = next((p for p in preferidas if p in ids), None)
             if exacto:
                 modelo = exacto
             else:
-                parcial = next((i for i in ids
-                                if any(p.split(":")[0] in i for p in preferidas)), None)
-                if parcial:
-                    modelo = parcial
+                candidata = next((i for i in ids
+                                  if any(p.split(":")[0] in i for p in preferidas)
+                                  and not any(x in i.lower() for x in no_chat)), None)
+                modelo = candidata or modelo
+            log(f"  [IA] catálogo ({len(ids)} modelos) → elegido: {modelo}")
         except Exception:  # noqa: BLE001 — si falla, usamos el preferido por defecto
             pass
     return url, modelo, key
