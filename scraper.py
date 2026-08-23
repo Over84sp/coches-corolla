@@ -16,6 +16,8 @@ import gzip
 import io
 import json
 import re
+import shutil
+import subprocess
 import sys
 import time
 import urllib.request
@@ -47,42 +49,55 @@ def log(msg: str) -> None:
 
 
 def fetch_html(url: str, retries: int = 3) -> str:
-    """GET con reintentos y descompresión gzip."""
+    """Descarga la página. Usa curl si está disponible (su fingerprint TLS pasa
+    los filtros anti-bot de coches.net; urllib recibe página de bloqueo en algunos
+    datacenters). Fallback a urllib con reintentos."""
     last_exc = None
     for attempt in range(1, retries + 1):
         try:
-            req = urllib.request.Request(url, headers={
-                "User-Agent": USER_AGENT,
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-                "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
-                "Accept-Encoding": "gzip",
-                "Cache-Control": "no-cache",
-                "Pragma": "no-cache",
-                "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
-                "Sec-Ch-Ua-Mobile": "?0",
-                "Sec-Ch-Ua-Platform": '"Windows"',
-                "Sec-Fetch-Dest": "document",
-                "Sec-Fetch-Mode": "navigate",
-                "Sec-Fetch-Site": "none",
-                "Sec-Fetch-User": "?1",
-                "Upgrade-Insecure-Requests": "1",
-            })
-            with urllib.request.urlopen(req, timeout=TIMEOUT_S) as resp:
-                raw = resp.read()
-                if resp.headers.get("Content-Encoding") == "gzip":
-                    raw = gzip.GzipFile(fileobj=io.BytesIO(raw)).read()
-                html = raw.decode("utf-8", "ignore")
-                STATE_DIR.mkdir(exist_ok=True)
-                (STATE_DIR / "ultima_respuesta.html").write_text(
-                    f"URL: {url}\nHTTP: {resp.status}\n"
-                    + "\n".join(f"{k}: {v}" for k, v in resp.headers.items())
-                    + f"\n\n{html[:3000]}", encoding="utf-8")
-                return html
+            html, status, headers = _fetch_with_curl(url) if shutil.which("curl") \
+                else _fetch_with_urllib(url)
+            STATE_DIR.mkdir(exist_ok=True)
+            (STATE_DIR / "ultima_respuesta.html").write_text(
+                f"URL: {url}\nHTTP: {status}\n{headers}\n\n{html[:3000]}", encoding="utf-8")
+            return html
         except Exception as exc:  # noqa: BLE001
             last_exc = exc
             log(f"  [!] intento {attempt}/{retries} fallido: {exc}")
             time.sleep(5 * attempt)
     raise RuntimeError(f"No se pudo descargar {url}: {last_exc}")
+
+
+def _fetch_with_curl(url: str):
+    cmd = [shutil.which("curl"), "-sS", "--compressed", "--max-time", str(TIMEOUT_S),
+           "-w", "\n@@HTTP:%{http_code}", "-A", USER_AGENT,
+           "-H", "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+           "-H", "Accept-Language: es-ES,es;q=0.9,en;q=0.8",
+           "-H", "Sec-Fetch-Dest: document", "-H", "Sec-Fetch-Mode: navigate",
+           "-H", "Sec-Fetch-Site: none", "-H", "Sec-Fetch-User: ?1",
+           "-H", "Upgrade-Insecure-Requests: 1", url]
+    out = subprocess.run(cmd, capture_output=True, timeout=TIMEOUT_S + 15).stdout
+    marker = out.rfind(b"\n@@HTTP:")
+    status = out[marker + 8:].decode("ascii", "ignore").strip() if marker >= 0 else "?"
+    html = (out[:marker] if marker >= 0 else out).decode("utf-8", "ignore")
+    return html, status, "vía curl"
+
+
+def _fetch_with_urllib(url: str):
+    req = urllib.request.Request(url, headers={
+        "User-Agent": USER_AGENT,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+        "Accept-Encoding": "gzip",
+        "Sec-Fetch-Dest": "document", "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none", "Sec-Fetch-User": "?1",
+        "Upgrade-Insecure-Requests": "1",
+    })
+    with urllib.request.urlopen(req, timeout=TIMEOUT_S) as resp:
+        raw = resp.read()
+        if resp.headers.get("Content-Encoding") == "gzip":
+            raw = gzip.GzipFile(fileobj=io.BytesIO(raw)).read()
+        return raw.decode("utf-8", "ignore"), resp.status, ""
 
 
 def parse_listings(html: str) -> dict:
