@@ -238,6 +238,54 @@ def fmt_row(a: dict) -> str:
             f"     🔗 {a['url']}")
 
 
+def write_site(inv_groups, inv_ads_count, new_group_ids, drop_group_ids, now_iso) -> None:
+    """Genera docs/index.html (dashboard) inyectando los datos en docs/plantilla.html."""
+    import statistics
+    site_dir = Path(__file__).resolve().parent / "docs"
+    plantilla = site_dir / "plantilla.html"
+    if not plantilla.exists():
+        log("⚠ Sin docs/plantilla.html — no se genera dashboard")
+        return
+    site_dir.mkdir(exist_ok=True)
+
+    # histórico del precio medio (una línea por tirada)
+    hist_file = STATE_DIR / "historico_precios.csv"
+    cars = [g[0] for g in inv_groups]
+    if cars:
+        nuevo_hist = not hist_file.exists()
+        with hist_file.open("a", newline="", encoding="utf-8") as fh:
+            w = csv.writer(fh)
+            if nuevo_hist:
+                w.writerow(["fecha", "coches", "precio_medio"])
+            w.writerow([now_iso[:16], len(cars), round(statistics.mean(c["price"] for c in cars))])
+    historico = []
+    if hist_file.exists():
+        for row in csv.DictReader(hist_file.open(encoding="utf-8")):
+            try:
+                historico.append({"fecha": row["fecha"], "coches": int(row["coches"]),
+                                  "precio": int(row["precio_medio"])})
+            except (KeyError, ValueError):
+                pass
+
+    inventario = [{
+        "precio": g[0]["price"], "anyo": g[0].get("year"), "km": g[0].get("km"),
+        "cv": g[0].get("hp"), "titulo": g[0].get("title", ""), "url": g[0].get("url", ""),
+        "urls": [a.get("url", "") for a in g], "n": len(g), "lugares": places_cell(g),
+        "tipo": g[0].get("tipo", ""), "visto": max(x.get("last_seen", "") for x in g),
+        "publicado": g[0].get("published", ""), "vendedor": g[0].get("seller_name") or g[0].get("seller_type", ""),
+        "nuevo": any(x["id"] in new_group_ids for x in g),
+        "rebajado": any(x["id"] in drop_group_ids for x in g),
+    } for g in inv_groups]
+
+    datos = {"actualizado": now_iso, "config": f"≥{MIN_YEAR} · ≥{MIN_HP} CV",
+             "anuncios": inv_ads_count, "rebajas": len(drop_group_ids),
+             "inventario": inventario, "historico": historico}
+    html = plantilla.read_text(encoding="utf-8").replace(
+        "/*DATOS*/null", json.dumps(datos, ensure_ascii=False))
+    (site_dir / "index.html").write_text(html, encoding="utf-8")
+    log(f"✔ Dashboard generado en docs/index.html ({len(inventario)} coches)")
+
+
 def car_key(a: dict):
     """Clave de 'mismo coche físico': los concesionarios publican el mismo vehículo
     en varias sucursales (multilisting) con IDs y hasta precios distintos."""
@@ -404,6 +452,11 @@ def main() -> int:
               "anuncio) mostrando el precio más bajo. La columna \"Visto\" indica la "
               "última tirada en la que apareció.*"]
     summary.write_text("\n".join(lines), encoding="utf-8")
+
+    try:
+        write_site(inv_groups, len(inv_ads), new_group_ids, drop_group_ids, now_iso)
+    except Exception as exc:  # noqa: BLE001 — el dashboard nunca debe romper el scraper
+        log(f"⚠ No se pudo generar el dashboard: {exc}")
 
     log(f"\n✔ Estado guardado en {STATE_DIR}/ · Resumen en resumen.md")
     return 0
