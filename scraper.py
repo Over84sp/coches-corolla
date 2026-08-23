@@ -276,7 +276,7 @@ def main() -> int:
             log(f"  {a['title']}\n     💶 {old_price:,} € → {a['price']:,} € "
                 f"({a['year']} · {a['km']:,} km · {a['province']})\n     🔗 {a['url']}")
 
-    # Resumen para GitHub Actions (job summary)
+    # Resumen para GitHub Actions (job summary) — novedades + rebajas + inventario completo
     summary = Path(__file__).resolve().parent / "resumen.md"
     lines = [f"# Corolla TS ≥{MIN_YEAR} · ≥{MIN_HP} CV — {now_iso}",
              f"Descargados: **{len(raw_ads)}** · Tras filtros: **{len(matched)}** · "
@@ -294,6 +294,20 @@ def main() -> int:
                   "| Antes | Ahora | Título |", "|---:|---:|---|"]
         for a, old in price_drops:
             lines.append(f"| {old:,} € | {a['price']:,} € | [{a['title']}]({a['url']}) |")
+    # Inventario completo visible en esta tirada, ordenado por precio
+    new_ids = {a["id"] for a in new_ads}
+    drop_ids = {a["id"] for a, _ in price_drops}
+    lines += ["", f"## 🚗 Inventario completo ({len(matched)})", "",
+              "| | Precio | Año | km | CV | Lugar | Tipo | Publicado | Título |",
+              "|---|---:|---:|---:|---:|---|---|---|---|"]
+    for a in sorted(matched, key=lambda x: x["price"]):
+        mark = "🆕" if a["id"] in new_ids else ("📉" if a["id"] in drop_ids else "")
+        lines.append(f"| {mark} | {a['price']:,} € | {a['year']} | {a['km']:,} | {a['hp']} | "
+                     f"{a['city']} ({a['province']}) | {a['tipo']} | {a['published']} | "
+                     f"[{a['title']}]({a['url']}) |")
+    lines += ["", "*El inventario cubre las 5 primeras páginas del listado "
+              "(tope anti-rate-limit de coches.net); novedades y rebajas son exactas "
+              "gracias al dedupeo por ID.*"]
     summary.write_text("\n".join(lines), encoding="utf-8")
 
     log(f"\n✔ Estado guardado en {STATE_DIR}/ · Resumen en resumen.md")
