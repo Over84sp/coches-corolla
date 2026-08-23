@@ -331,14 +331,23 @@ def ai_ranking(coches: list, now_iso: str):
               "Inventario:\n" + "\n".join(lineas))
     payload = {
         "model": MODELO_IA, "temperature": 0.2, "max_tokens": 900,
+        "response_format": {"type": "json_object"},
         "messages": [{"role": "system", "content": sysmsg},
                      {"role": "user", "content": usrmsg}]}
     try:
         estado, out = _curl_json(url_ia, payload=payload, token=tok, timeout=90)
+        if estado == "400" and isinstance(out, dict) and "response_format" in str(out):
+            payload.pop("response_format", None)          # reintento sin json_object
+            estado, out = _curl_json(url_ia, payload=payload, token=tok, timeout=90)
         if estado != "200" or not isinstance(out, dict):
             raise RuntimeError(f"[{MODELO_IA}] HTTP {estado}: {str(out)[:150]}")
-        contenido = out["choices"][0]["message"]["content"].strip()
+        msg = out.get("choices", [{}])[0].get("message", {})
+        contenido = (msg.get("content") or msg.get("reasoning_content")
+                     or msg.get("reasoning") or "").strip()
         contenido = re.sub(r"^```(json)?|```$", "", contenido.strip(), flags=re.M).strip()
+        if not contenido.startswith("{"):
+            m = re.search(r"\{[\s\S]*\}", contenido)   # primer bloque JSON
+            contenido = m.group(0) if m else ""
         ranking = json.loads(contenido).get("ranking", [])
         ids_validos = {c["id"] for c in coches}
         ranking = [{"id": str(r.get("id", "")), "score": int(r.get("score", 50)),
