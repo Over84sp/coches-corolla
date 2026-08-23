@@ -245,9 +245,8 @@ PROVEEDORES = {
     "xai-":  ("https://api.x.ai/v1",       ["grok-4-fast-non-reasoning", "grok-4-fast",
                                              "grok-3-mini", "grok-3"]),
     "gsk_":  ("https://api.groq.com/openai/v1",
-              ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "llama-3.1-8b",
-               "gemma2-9b-it", "qwen/qwen3-32b", "moonshotai/kimi-k2-instruct",
-               "openai/gpt-oss-120b", "openai/gpt-oss-20b"]),
+              ["qwen/qwen3.6-27b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant",
+               "groq/compound-mini"]),
     "sk_or_": ("https://openrouter.ai/api/v1",
                ["x-ai/grok-4-fast:free", "x-ai/grok-4-fast", "x-ai/grok-3-mini",
                 "x-ai/grok-4-fast-non-reasoning", "deepseek/deepseek-chat-v3.1:free",
@@ -257,43 +256,41 @@ PROVEEDORES = {
 
 
 def _resolver_ia():
-    """Devuelve (url_chat, modelo, key) según la key y los overrides por env."""
+    """Devuelve (base_url, key, candidatos) según prefijo de la key y el catálogo."""
     key = (os.environ.get("IA_API_KEY") or "").strip()
     if not key:
         return None
-    base, preferidas = "https://api.groq.com/openai/v1", ["llama-3.1-8b-instant"]
+    base, preferidas = "https://api.groq.com/openai/v1", [
+        "llama-3.3-70b-versatile", "llama-3.1-8b-instant", "qwen/qwen3.6-27b"]
     for prefijo, (b, modelos) in PROVEEDORES.items():
         if key.lower().startswith(prefijo):
             base, preferidas = b, modelos
             break
     if os.environ.get("IA_URL"):
         base = os.environ["IA_URL"].rstrip("/")
-    url = base + "/chat/completions"
-    modelo = os.environ.get("IA_MODEL") or preferidas[0]
-    # si no hay override de modelo, intenta elegir uno realmente disponible
-    if not os.environ.get("IA_MODEL"):
-        try:
-            estado, cuerpo = _curl_json(base + "/models", token=key, timeout=20)
-            ids = [m.get("id", "") for m in (cuerpo or {}).get("data", [])]
-            no_chat = ("guard", "embed", "whisper", "tts", "vision", "flux", "sdxl",
-                       "oss", "reasoning", "distil", "rerank")
-            exacto = next((p for p in preferidas if p in ids), None)
-            if exacto:
-                modelo = exacto
-            else:
-                candidata = next((i for i in ids
-                                  if any(p.split(":")[0] in i for p in preferidas)
-                                  and not any(x in i.lower() for x in no_chat)), None)
-                modelo = candidata or modelo
-            log(f"  [IA] catálogo: {', '.join(ids)}")
-            log(f"  [IA] elegido: {modelo}")
-        except Exception:  # noqa: BLE001 — si falla, usamos el preferido por defecto
-            pass
-    return url, modelo, key
+    candidatos = ([os.environ["IA_MODEL"]] if os.environ.get("IA_MODEL")
+                  else list(preferidas))
+    no_chat = ("guard", "embed", "whisper", "tts", "vision", "flux", "sdxl",
+               "orpheus", "safeguard")
+    try:
+        estado, cuerpo = _curl_json(base + "/models", token=key, timeout=20)
+        ids = [m.get("id", "") for m in (cuerpo or {}).get("data", [])]
+        log(f"  [IA] catálogo ({len(ids)}): {', '.join(ids[:14])}")
+        # añade como reserva los primeros modelos "chat" del catálogo
+        if not os.environ.get("IA_MODEL"):
+            candidatos += [i for i in ids
+                           if i not in candidatos
+                           and not any(x in i.lower() for x in no_chat)][:2]
+        # descarta candidatos que no están en el catálogo (si este se pudo leer)
+        presentes = [c for c in candidatos if c in ids] if ids else candidatos
+        candidatos = presentes or candidatos
+    except Exception:  # noqa: BLE001
+        pass
+    return base, key, candidatos[:4]
 
 
 def _curl_json(url, payload=None, token=None, timeout=90):
-    """POST/GET JSON vía curl (python-urllib se come el 403/1010 de Cloudflare)."""
+    """POST/GET JSON vía curl (python-urllib recibe 403/1010 de Cloudflare)."""
     exe = shutil.which("curl")
     if not exe:
         raise RuntimeError("curl no disponible")
@@ -315,64 +312,60 @@ def _curl_json(url, payload=None, token=None, timeout=90):
 
 
 def ai_ranking(coches: list, now_iso: str):
-    """Ranking de oportunidades con LLM (si hay IA_API_KEY). Devuelve None si no
-    hay key o falla, y entonces el dashboard usa su heurístico integrado."""
+    """Ranking de oportunidades con LLM (si hay secret IA_API_KEY). Prueba varios
+    modelos hasta que uno responda. Devuelve None si no lo consigue (el dashboard
+    usa entonces su heurístico integrado)."""
     ia = _resolver_ia()
     if not ia or not coches:
         return None
-    url_ia, MODELO_IA, tok = ia
+    base, key, candidatos = ia
+
     lineas = ["id|precio|año|km|CV|versión|lugar|valoración"]
     for c in coches[:45]:
         lineas.append(f"{c['id']}|{c['precio']}€|{c['anyo']}|{c['km']}km|{c['cv']}CV|"
                       f"{c['titulo'][:34]}|{c['lugares'][:18]}|{c.get('rating') or '-'}")
-    sysmsg = ("Eres un experto en coches de ocasión Toyota Corolla Touring Sports híbridos. "
-              "Respondes SOLO con JSON válido, sin texto adicional.")
+    sysmsg = ("Eres un experto en coches de ocasión Toyota Corolla Touring Sports "
+              "híbridos. Respondes SOLO con JSON válido, sin texto adicional.")
     usrmsg = ("Analiza este inventario y haz un ranking de las 12 MEJORES oportunidades "
-              "calidad/precio (ten en cuenta precio vs km y año, potencia, acabado, "
-              "reputación del vendedor y coherencia del anuncio). Formato exacto:\n"
-              '{"ranking":[{"id":"<id>","score":<0-100>,"comentario":"máx 85 caracteres, concreto"}]}\n'
+              "calidad/precio (precio vs km y año, potencia, acabado, reputación del "
+              "vendedor, coherencia). Formato exacto:\n"
+              '{"ranking":[{"id":"<id>","score":<0-100>,"comentario":"máx 85 caracteres"}]}\n'
               "Inventario:\n" + "\n".join(lineas))
-    payload = {
-        "model": MODELO_IA, "temperature": 0.2, "max_tokens": 900,
-        "response_format": {"type": "json_object"},
-        "messages": [{"role": "system", "content": sysmsg},
-                     {"role": "user", "content": usrmsg}]}
-    try:
-        estado, out = _curl_json(url_ia, payload=payload, token=tok, timeout=90)
-        if (estado == "400" and isinstance(out, dict)
-                and "json" in str(out).lower()):
-            payload.pop("response_format", None)          # reintento sin json_object
-            estado, out = _curl_json(url_ia, payload=payload, token=tok, timeout=90)
-        if estado != "200" or not isinstance(out, dict):
-            raise RuntimeError(f"[{MODELO_IA}] HTTP {estado}: {str(out)[:150]}")
-        msg = out.get("choices", [{}])[0].get("message", {})
-        contenido = (msg.get("content") or msg.get("reasoning_content")
-                     or msg.get("reasoning") or "").strip()
-        contenido = re.sub(r"^```(json)?|```$", "", contenido.strip(), flags=re.M).strip()
-        if not contenido.startswith("{"):
-            m = re.search(r"\{[\s\S]*\}", contenido)   # primer bloque JSON
-            contenido = m.group(0) if m else ""
+
+    ultimo_error = "sin intentos"
+    for modelo in candidatos:
+        payload = {
+            "model": modelo, "temperature": 0.2, "max_tokens": 900,
+            "messages": [{"role": "system", "content": sysmsg},
+                         {"role": "user", "content": usrmsg}]}
         try:
+            estado, out = _curl_json(base + "/chat/completions",
+                                     payload=payload, token=key, timeout=90)
+            if estado != "200" or not isinstance(out, dict):
+                ultimo_error = f"[{modelo}] HTTP {estado}: {str(out)[:120]}"
+                log(f"  [IA] {ultimo_error}")
+                continue
+            msg = (out.get("choices") or [{}])[0].get("message", {}) or {}
+            contenido = (msg.get("content") or msg.get("reasoning_content")
+                         or msg.get("reasoning") or "").strip()
+            contenido = re.sub(r"^```(json)?|```$", "", contenido.strip(), flags=re.M).strip()
+            if not contenido.startswith("{"):
+                m = re.search(r"\{[\s\S]*\}", contenido)
+                contenido = m.group(0) if m else ""
             ranking = json.loads(contenido).get("ranking", [])
-        except json.JSONDecodeError:
-            raise RuntimeError(
-                f"contenido={contenido[:110]!r} · claves_resp={list(out)[:6]} "
-                f"· claves_msg={list(msg)[:6]} · estado={estado}")
-        ids_validos = {c["id"] for c in coches}
-        ranking = [{"id": str(r.get("id", "")), "score": int(r.get("score", 50)),
-                    "comentario": str(r.get("comentario", ""))[:100]}
-                   for r in ranking if str(r.get("id")) in ids_validos][:12]
-        if not ranking:
-            return None
-        log(f"✔ Ranking IA generado ({MODELO_IA}, {len(ranking)} coches)")
-        return {"fecha": now_iso, "ia": MODELO_IA, "ranking": ranking}
-    except urllib.error.HTTPError as exc:
-        cuerpo = exc.read()[:180].decode("utf-8", "ignore")
-        log(f"⚠ Ranking IA no disponible (HTTP {exc.code}: {cuerpo}) — dashboard heurístico")
-        return None
-    except Exception as exc:  # noqa: BLE001 — la IA nunca debe romper el scraper
-        log(f"⚠ Ranking IA no disponible ({str(exc)[:90]}) — el dashboard usará el heurístico")
-        return None
+            ids_validos = {c["id"] for c in coches}
+            ranking = [{"id": str(r.get("id", "")), "score": int(r.get("score", 50)),
+                        "comentario": str(r.get("comentario", ""))[:100]}
+                       for r in ranking if str(r.get("id")) in ids_validos][:12]
+            if ranking:
+                log(f"✔ Ranking IA generado ({modelo}, {len(ranking)} coches)")
+                return {"fecha": now_iso, "ia": modelo, "ranking": ranking}
+            ultimo_error = f"[{modelo}] ranking vacío"
+        except Exception as exc:  # noqa: BLE001
+            ultimo_error = f"[{modelo}] {str(exc)[:110]}"
+            log(f"  [IA] {ultimo_error}")
+    log(f"⚠ Ranking IA no disponible ({ultimo_error}) — el dashboard usará el heurístico")
+    return None
 
 
 def write_site(inv_groups, inv_ads_count, new_group_ids, drop_group_ids, now_iso) -> None:
