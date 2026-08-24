@@ -89,6 +89,31 @@
 
 <div class="rankwrap card" id="novedadesSec" style="padding-bottom:14px"></div>
 
+<div class="rankwrap card" id="cmpSec" style="padding-bottom:14px">
+  <h3>⚔️ Comparador <span class="tag" style="margin-left:4px">dos coches · o vs mejor rival</span></h3>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0 10px">
+    <select id="cmpA" style="background:var(--card2);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:7px 9px;font-size:13px;max-width:290px"></select>
+    <b style="color:var(--tx2)">vs</b>
+    <select id="cmpB" style="background:var(--card2);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:7px 9px;font-size:13px;max-width:290px">
+      <option value="auto">🤖 el mejor rival (automático)</option>
+    </select>
+    <button class="chip on" id="cmpGo">Comparar</button>
+    <button class="chip" id="cmpIA" title="Requiere tu key de Groq guardada abajo">🤖 Veredicto IA</button>
+  </div>
+  <div id="cmpOut"></div>
+  <div id="cmpIAOut" style="margin-top:8px"></div>
+  <details style="margin-top:10px">
+    <summary class="mini" style="cursor:pointer">🔑 Configurar veredicto IA (tu key de Groq, solo en este navegador)</summary>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+      <input id="cmpKey" type="password" placeholder="gsk_… (se guarda en localStorage de tu dispositivo)" style="flex:1;min-width:220px;background:var(--card2);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:7px 9px;font-size:13px">
+      <button class="chip" id="cmpKeySave">Guardar</button>
+      <button class="chip" id="cmpKeyDel">Borrar</button>
+      <span class="mini" id="cmpKeyEstado"></span>
+    </div>
+    <p class="mini" style="margin:8px 0 0">La key nunca se publica ni se envía a ningún sitio salvo api.groq.com desde tu propio navegador. Consíguela gratis en console.groq.com/keys.</p>
+  </details>
+</div>
+
 <div class="rankwrap card" id="rankSec" style="padding-bottom:14px"></div>
 
 <div class="tbl-card card" style="padding:0;overflow-x:auto">
@@ -483,6 +508,114 @@ function estadoSec(){
   </div>`;
 }
 
+/* ─── comparador ─── */
+function etiquetaCoche(c){return `${fmtE(c.precio)} · ${versionDe(c)} · ${fmtN(c.km)} km · ${c.anyo} · ${(c.lugares||'').split('(')[0]}`}
+function mejorRival(c){
+  const rivales=DATA.inventario.filter(x=>x.id!==c.id && versionDe(x)===versionDe(c));
+  if(!rivales.length) return null;
+  return rivales.sort((a,b)=>((RANK.m[b.id]||{}).score||0)-((RANK.m[a.id]||{}).score||0))[0];
+}
+function specCoche(c){
+  const anyos=Math.max(1,2026-(c.anyo||2026)+1);
+  const r=(RANK.m[c.id]||{});
+  return {c, anyos, kmAno:Math.round((c.km||0)/anyos),
+          eur10k:Math.round(c.precio/((c.km||1)/10000)), score:r.score||null, pos:r.pos||null};
+}
+function pintarComparador(){
+  const selA=document.getElementById('cmpA'), selB=document.getElementById('cmpB');
+  const a=selA.value, b=selB.value;
+  const orde=[...DATA.inventario].sort((x,y)=>x.precio-y.precio);
+  selA.innerHTML=orde.map(c=>`<option value="${c.id}" ${c.id===a?'selected':''}>${esc(etiquetaCoche(c))}</option>`).join('');
+  const bops=orde.filter(c=>c.id!==a);
+  selB.innerHTML=`<option value="auto" ${b==='auto'?'selected':''}>🤖 el mejor rival (automático)</option>`+
+    bops.map(c=>`<option value="${c.id}" ${c.id===b?'selected':''}>${esc(etiquetaCoche(c))}</option>`).join('');
+  const ke=localStorage.getItem('iakey_groq');
+  document.getElementById('cmpKeyEstado').textContent=ke?'✅ key guardada':'sin key';
+}
+function comparar(){
+  const A=DATA.inventario.find(c=>c.id===document.getElementById('cmpA').value);
+  if(!A){return null}
+  let B=DATA.inventario.find(c=>c.id===document.getElementById('cmpB').value);
+  let autoTxt='';
+  if(!B){B=mejorRival(A); autoTxt=' <span class=tag>rival automático: mejor puntuado de su modelo</span>'}
+  if(!B){document.getElementById('cmpOut').innerHTML='<p class=mini>no hay rival disponible para comparar</p>';return null}
+  const sA=specCoche(A), sB=specCoche(B);
+  const fila=(n,va,vb,mejor)=>`<tr><td class=mini style="text-align:right;padding:4px 8px;white-space:nowrap">${va}</td><td class=mini style="text-align:center;color:var(--tx2);padding:4px 6px;white-space:nowrap">${n}</td><td class=mini style="padding:4px 8px;white-space:nowrap">${vb}</td></tr>`;
+  const dP=A.precio-B.precio, dK=(A.km||0)-(B.km||0);
+  let razones=[];
+  if(dP) razones.push(`${dP<0?'A':'B'} es ${fmtE(Math.abs(dP))} más barato`);
+  if(dK) razones.push(`${dK<0?'A':'B'} tiene ${fmtN(Math.abs(dK))} km menos`);
+  if(sA.score!=null&&sB.score!=null&&sA.score!==sB.score) razones.push(`mejor valoración de mercado: ${sA.score>sB.score?'A':'B'} (${Math.max(sA.score,sB.score)} vs ${Math.min(sA.score,sB.score)})`);
+  const rA=parseFloat(A.rating)||0, rB=parseFloat(B.rating)||0;
+  if(rA&&rB&&rA!==rB) razones.push(`vendedor mejor valorado: ${rA>rB?'A':'B'} (⭐${Math.max(rA,rB)})`);
+  else if(rA&&!rB) razones.push('A tiene vendedor con valoración, B sin valoraciones');
+  else if(rB&&!rA) razones.push('B tiene vendedor con valoración, A sin valoraciones');
+  const obj=m=>{const o=(DATA.objetivos||[]).find(o=>o.modelo===m);return o?o.objetivo:null};
+  const oA=obj(versionDe(A)), oB=obj(versionDe(B));
+  if(oA&&A.precio<=oA) razones.push('🎯 A ya está bajo el objetivo de su modelo');
+  if(oB&&B.precio<=oB) razones.push('🎯 B ya está bajo el objetivo de su modelo');
+  document.getElementById('cmpOut').innerHTML=
+    `<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+      <div style="flex:1;min-width:200px;background:var(--card2);border-radius:12px;padding:10px"><b style="color:var(--ac)">A</b> · <a href="${A.url}">${esc(A.titulo)}</a><div class=mini>${esc(A.lugares)} · ${esc(A.vendedor||'')}</div></div>
+      <div style="flex:1;min-width:200px;background:var(--card2);border-radius:12px;padding:10px"><b style="color:var(--ok)">B</b>${autoTxt} · <a href="${B.url}">${esc(B.titulo)}</a><div class=mini>${esc(B.lugares)} · ${esc(B.vendedor||'')}</div></div>
+    </div>
+    <table style="font-size:13px">${fila('💶 precio',fmtE(A.precio),fmtE(B.precio))}${fila('año',A.anyo,B.anyo)}${fila('km',fmtN(A.km),fmtN(B.km))}${fila('km/año',fmtN(sA.kmAno),fmtN(sB.kmAno))}${fila('€ por 10.000 km',fmtN(sA.eur10k),fmtN(sB.eur10k))}${fila('score',sA.score??'—',sB.score??'—')}</table>
+    <ul class=mini style="margin:8px 0 0 18px">${razones.map(r=>`<li style="margin:2px 0">${r}</li>`).join('')}</ul>`;
+  return {A,B};
+}
+async function veredictoIA(){
+  const par=comparar(); if(!par) return;
+  const out=document.getElementById('cmpIAOut');
+  const key=localStorage.getItem('iakey_groq');
+  if(!key){out.innerHTML='<p class=mini style="color:var(--warn)">Guarda primero tu key de Groq en «🔑 Configurar veredicto IA» (abajo) — es gratis y se queda en tu navegador.</p>';return}
+  out.innerHTML='<p class=mini>🤖 pensando…</p>';
+  const comp=c=>({modelo:versionDe(c),precio:c.precio,año:c.anyo,km:c.km,acabado:trimDe(c.titulo),titulo:c.titulo.slice(0,44),lugar:c.lugares,vendedor:c.vendedor,valocacion:c.rating||null,tipo:c.tipo,publicado:c.publicado});
+  const sys='Eres asesor experto en coches de ocasión, especialmente Toyota Corolla híbridos. Responde en español, claro y directo, con cifras concretas.';
+  const usr=`Compara estos dos anuncios y di cuál comprarías y POR QUÉ (máx 90 palabras). Si están muy parejos, dilo y qué detalle decidiría.\nCOche A: ${JSON.stringify(comp(par.A))}\nCoche B: ${JSON.stringify(comp(par.B))}`;
+  try{
+    const txt=await llamarIA(sys,usr);
+    out.innerHTML=`<div style="background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:14px">💬 <b>Veredicto IA:</b> ${esc(txt)}</div>`;
+  }catch(e){
+    out.innerHTML=`<p class=mini style="color:var(--bad)">No se pudo consultar la IA: ${esc(String(e.message||e))}</p>`;
+  }
+}
+async function llamarIA(sys,usr){
+  const key=localStorage.getItem('iakey_groq');
+  const modelos=['qwen/qwen3.6-27b','openai/gpt-oss-20b','allam-2-7b','groq/compound-mini'];
+  const cache=localStorage.getItem('iamodel'); if(cache) modelos.unshift(cache);
+  let ultimo='';
+  for(const m of [...new Set(modelos)]){
+    const body={model:m,max_tokens:420,temperature:.4,
+      messages:[{role:'system',content:sys},{role:'user',content:usr}]};
+    if(/qwen/i.test(m)) body.reasoning_format='hidden';
+    try{
+      const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),45000);
+      const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+        method:'POST',signal:ctl.signal,
+        headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json'},
+        body:JSON.stringify(body)});
+      clearTimeout(t);
+      if(!r.ok){ultimo=m+' → HTTP '+r.status; continue}
+      const j=await r.json();
+      const msg=((j.choices||[])[0]||{}).message||{};
+      const txt=(msg.content||msg.reasoning_content||'').trim();
+      if(txt){localStorage.setItem('iamodel',m);return txt}
+      ultimo=m+' → respuesta vacía';
+    }catch(e){ultimo=m+' → '+(e.message||e)}
+  }
+  throw new Error(ultimo||'sin respuesta');
+}
+function configurarKey(){
+  document.getElementById('cmpKeySave').onclick=()=>{
+    const v=document.getElementById('cmpKey').value.trim();
+    if(v.startsWith('gsk_')){localStorage.setItem('iakey_groq',v);document.getElementById('cmpKeyEstado').textContent='✅ key guardada';}
+    else document.getElementById('cmpKeyEstado').textContent='⚠️ parece una key de Groq inválida (empieza por gsk_)';
+  };
+  document.getElementById('cmpKeyDel').onclick=()=>{localStorage.removeItem('iakey_groq');document.getElementById('cmpKeyEstado').textContent='sin key';};
+  document.getElementById('cmpGo').onclick=comparar;
+  document.getElementById('cmpIA').onclick=veredictoIA;
+}
+
 /* ─── ranking ─── */
 function rankingSec(I){
   const box=document.getElementById('rankSec');
@@ -581,6 +714,7 @@ if(DATA){
   document.getElementById('sub').innerHTML =
     `Toyota Corolla Touring Sports · <b>${DATA.config}</b> · ${DATA.inventario.length} coches · actualizado ${esc(DATA.actualizado)}`;
   construirFiltros();
+  pintarComparador(); configurarKey();
   document.querySelectorAll('#tbl th[data-k]').forEach(th=>{
     th.addEventListener('click',()=>{const k=th.dataset.k;orden=orden.k===k?{k,asc:!orden.asc}:{k,asc:true};refresco()});
   });
