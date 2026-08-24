@@ -184,22 +184,46 @@ function kpis(I){
 
 /* ─── gráficos ─── */
 function c1(I){
-  const P = I.map(c=>c.precio).filter(p=>p>0);
   const box=document.getElementById('c1');
+  const P=I.map(c=>c.precio).filter(p=>p>0).sort((a,b)=>a-b);
   if(!P.length){box.innerHTML='<p class=mini>sin coches con estos filtros</p>';return}
-  const min=Math.min(...P), max=Math.max(...P), paso=Math.max(1000, Math.round((max-min)/9/500)*500);
+  const min=P[0], max=P[P.length-1];
+  const pasos=[1000,1500,2000,2500,3000,4000,5000];
+  const paso=pasos.find(s=>Math.ceil((max-min)/s)<=11)||5000;
   const b0=Math.floor(min/paso)*paso, nb=Math.ceil((max-b0)/paso)+1;
   const bins=new Array(nb).fill(0);
   P.forEach(p=>bins[Math.min(nb-1,Math.floor((p-b0)/paso))]++);
-  const W=420,H=200,pad=30,bw=(W-20)/nb,mx=Math.max(...bins);
+  const W=440,H=212,padL=34,padB=30,padT=18;
+  const bw=(W-padL-12)/nb, mx=Math.max(...bins);
+  const Y=n=>H-padB-(H-padB-padT)*(n/mx);
   let s=svgEl(W,H);
+  s+=`<text x=4 y=11 fill=#9aa7bd font-size=9>coches ↧ · tramos de ${(paso/1000).toLocaleString('es-ES',{maximumFractionDigits:1})}k € →</text>`;
+  for(const f of [0,.5,1]){
+    const y=Y(mx*f);
+    s+=`<line x1=${padL} y1=${y} x2=${W-8} y2=${y} stroke=#1d2740 ${f?'stroke-dasharray=3 4':''}/>`+
+       `<text x=${padL-5} y=${y+3} fill=#9aa7bd font-size=9 text-anchor=end>${Math.round(mx*f)}</text>`;
+  }
   bins.forEach((n,i)=>{
-    const h=(H-pad-10)*(n/mx), x=10+i*bw, y=H-pad-h;
-    s+=`<rect x=${x+2} y=${y} width=${bw-4} height=${h} rx=3 fill="#4cc2ff" opacity="${.55+.45*n/mx}"><title>${fmtE(b0+i*paso)} – ${fmtE(b0+(i+1)*paso)}: ${n} coches</title></rect>`;
-    if(n)s+=`<text x=${x+bw/2} y=${y-4} fill=#9aa7bd font-size=10 text-anchor=middle>${n}</text>`;
+    const x=padL+i*bw, y=Y(n), h=H-padB-y;
+    if(n>0){
+      s+=`<rect x=${x+2} y=${y} width=${bw-4} height=${h} rx=3 fill="#4cc2ff" opacity="${.45+.55*n/mx}"><title>entre ${fmtE(b0+i*paso)} y ${fmtE(b0+(i+1)*paso)}: ${n} coche${n>1?'s':''}</title></rect>`+
+         `<text x=${x+bw/2} y=${y-4} fill=#e6edf3 font-size=10 text-anchor=middle>${n}</text>`;
+    }else{
+      s+=`<rect x=${x+bw/2-1.5} y=${H-padB-2} width=3 height=2 fill=#26304d/>`;
+    }
   });
-  s+=`<line x1=8 y1=${H-pad} x2=${W-8} y2=${H-pad} stroke=#26304d/>`;
-  for(let i=0;i<nb;i+=Math.ceil(nb/6))s+=`<text x=${10+i*bw+bw/2} y=${H-pad+14} fill=#9aa7bd font-size=9 text-anchor=middle>${((b0+i*paso)/1000).toFixed(0)}k</text>`;
+  const cada=nb>8?2:1;
+  for(let i=0;i<=nb;i++){
+    const x=padL+i*bw;
+    s+=`<line x1=${x} y1=${H-padB} x2=${x} y2=${H-padB+4} stroke=#4a5878/>`;
+    if(i%cada===0)s+=`<text x=${x} y=${H-padB+16} fill=#9aa7bd font-size=9 text-anchor=middle>${((b0+i*paso)/1000).toLocaleString('es-ES',{maximumFractionDigits:1})}k</text>`;
+  }
+  s+=`<line x1=${padL} y1=${H-padB} x2=${W-8} y2=${H-padB} stroke=#26304d/>`;
+  const med=P[Math.floor(P.length/2)];
+  const xm=padL+Math.min(nb,Math.max(0,(med-b0)/paso))*bw;
+  s+=`<line x1=${xm} y1=${padT-4} x2=${xm} y2=${H-padB} stroke=#ffb86c stroke-dasharray=4 4 stroke-width=1.5/>`;
+  const lx=Math.max(padL+2,Math.min(xm+6,W-86));
+  s+=`<text x=${lx} y=${padT-5} fill=#ffb86c font-size=9.5>mediana ${fmtE(med)}</text>`;
   box.innerHTML=s+'</svg>';
 }
 
