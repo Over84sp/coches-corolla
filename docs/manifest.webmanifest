@@ -1,0 +1,14 @@
+{
+  "name": "Corolla TS Radar",
+  "short_name": "Radar TS",
+  "description": "Radar de mercado del Toyota Corolla Touring Sports de ocasión",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
+  "icons": [
+    {"src": "icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
