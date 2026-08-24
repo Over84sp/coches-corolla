@@ -545,14 +545,6 @@ function tabla(I){
 /* ─── filtros UI ─── */
 function chip(txt,on,fn){const b=document.createElement('button');b.className='chip'+(on?' on':'');b.textContent=txt;b.onclick=fn;return b}
 function construirFiltros(){
-  const toggle=(host,val,conjunto)=>{
-    const b=document.createElement('button');
-    b.className='chip';
-    b.textContent=val;
-    b.dataset.v=val;
-    b.onclick=()=>{conjunto.has(val)?conjunto.delete(val):conjunto.add(val);refresco()};
-    host.appendChild(b);
-  };
   const g1=document.getElementById('fCV');
   [...new Set(DATA.inventario.map(versionDe))].sort()
     .forEach(v=>{const b=document.createElement('button');b.className='chip';b.textContent=v;b.dataset.f='modelo';b.dataset.v=v;
