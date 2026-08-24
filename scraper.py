@@ -458,6 +458,26 @@ def write_site(inv_groups, inv_ads_count, new_group_ids, drop_group_ids, now_iso
         "rebajado": any(x["id"] in drop_group_ids for x in g),
     } for g in inv_groups]
 
+    # ── referencias cortas estables (T001, T002…) ──
+    ref_file = STATE_DIR / "referencias.csv"
+    refs = {}
+    if ref_file.exists():
+        for row in csv.DictReader(ref_file.open(encoding="utf-8")):
+            if row.get("id") and row.get("ref"):
+                refs[row["id"]] = row["ref"]
+    sig = max((int(r[1:]) for r in refs.values() if r.startswith("T")), default=0) + 1
+    for c in sorted(inventario, key=lambda x: x["precio"]):
+        if c["id"] not in refs:
+            refs[c["id"]] = f"T{sig:03d}"
+            sig += 1
+    with ref_file.open("w", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh)
+        w.writerow(["ref", "id"])
+        for rid, ref in sorted(refs.items(), key=lambda kv: kv[1]):
+            w.writerow([ref, rid])
+    for c in inventario:
+        c["ref"] = refs.get(c["id"], "")
+
     # ── comentarios de la IA SOLO para novedades ──
     nuevos = [c for c in inventario if c["nuevo"]]
     com_file = STATE_DIR / "comentarios.csv"

@@ -483,7 +483,7 @@ function novedadesSec(){
       ${c.foto?`<img src="${c.foto}" alt="" style="width:100%;height:110px;object-fit:cover;border-radius:9px;margin-bottom:7px" onerror="this.remove()">`:''}
       <span class="score">${c.precio<=tgt?'🎯':''}</span>
       <div class="tit"><a href="${c.url}">${esc(c.titulo)}</a>${c.n>1?` <span class=tag>×${c.n}</span>`:''}</div>
-      <div class="spec">${fmtE(c.precio)} · ${c.anyo} · ${fmtN(c.km)} km · ${versionDe(c)} · ${esc(c.lugares)}${c.rating?` · ⭐${c.rating}`:''}</div>
+      <div class="spec">${c.ref?`<b style="color:var(--ac)">${c.ref}</b> · `:''}${fmtE(c.precio)} · ${c.anyo} · ${fmtN(c.km)} km · ${versionDe(c)} · ${esc(c.lugares)}${c.rating?` · ⭐${c.rating}`:''}</div>
       ${c.comentarioIA?`<div class="com" style="color:var(--ac)">💬 ${esc(c.comentarioIA)}</div>`:`<div class="mini" style="margin-top:7px">(sin comentario IA esta vez)</div>`}
     </div>`;
   });
@@ -509,7 +509,7 @@ function estadoSec(){
 }
 
 /* ─── comparador ─── */
-function etiquetaCoche(c){return `${fmtE(c.precio)} · ${versionDe(c)} · ${fmtN(c.km)} km · ${c.anyo} · ${(c.lugares||'').split('(')[0]}`}
+function etiquetaCoche(c){return `${c.ref?c.ref+' · ':''}${fmtE(c.precio)} · ${versionDe(c)} · ${fmtN(c.km)} km · ${c.anyo} · ${(c.lugares||'').split('(')[0]}`}
 function mejorRival(c){
   const rivales=DATA.inventario.filter(x=>x.id!==c.id && versionDe(x)===versionDe(c));
   if(!rivales.length) return null;
@@ -632,7 +632,7 @@ function rankingSec(I){
     html += `<div class="rk ${r.pos<=3?'medalla':''}">
       <span class="pos">${pos}</span><span class="score">${r.score}</span>
       <div class="tit"><a href="${c.url}">${esc(c.titulo)}</a>${c.n>1?` <span class=tag>×${c.n}</span>`:''}</div>
-      <div class="spec">${fmtE(c.precio)} · ${c.anyo} · ${fmtN(c.km)} km · ${c.cv} CV · ${esc(c.lugares)}${c.rating?` · ⭐${c.rating}`:''}</div>
+      <div class="spec">${c.ref?`<b style="color:var(--ac)">${c.ref}</b> · `:''}${fmtE(c.precio)} · ${c.anyo} · ${fmtN(c.km)} km · ${c.cv} CV · ${esc(c.lugares)}${c.rating?` · ⭐${c.rating}`:''}</div>
       <div class="com">“${esc(r.com)}”</div>
       ${COMIA[c.id]?`<div class="com" style="color:var(--ac)">💬 IA: “${esc(COMIA[c.id])}”</div>`:''}
     </div>`;
@@ -652,7 +652,7 @@ function filaCoche(c){
   const badge=((r&&r.pos)?`<span class=rkn title="puntuación ${r.score}">🏆${r.pos}</span>`:'')+
               (c.precio<=target?`<span class=rkn title="bajo tu objetivo de compra" style="color:var(--ok)">🎯</span>`:'');
   return `<tr><td class=num><b>${fmtE(c.precio)}</b></td><td class=num>${c.anyo}</td><td class=num>${fmtN(c.km)}</td>`+
-    `<td class=num>${c.cv}</td><td>${badge}<a href="${c.url}">${esc(c.titulo)}</a>${extra} ${marks}<div class=mini>${trimDe(c.titulo)}${c.publicado?' · publicado '+c.publicado:''}</div></td>`+
+    `<td class=num>${c.cv}</td><td>${c.ref?`<b style="color:var(--ac)">${c.ref}</b> `:''}${badge}<a href="${c.url}">${esc(c.titulo)}</a>${extra} ${marks}<div class=mini>${trimDe(c.titulo)}${c.publicado?' · publicado '+c.publicado:''}</div></td>`+
     `<td>${esc(c.lugares)}</td><td class=mini>${esc(c.vendedor||'—')}${c.rating?' ⭐'+c.rating:''}</td><td class=mini>${c.visto}</td></tr>`;
 }
 function tabla(I){
