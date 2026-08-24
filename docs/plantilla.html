@@ -101,6 +101,7 @@
 </header>
 
 <nav class="anclas">
+  <a href="#" id="btnRefrescar" title="Recargar con los últimos datos">🔄 Actualizar</a>
   <a href="#novedadesSec">🆕 Novedades</a>
   <a href="#cmpSec">⚔️ Comparador</a>
   <a href="#rankSec">🏆 Ranking</a>
@@ -569,7 +570,7 @@ function specCoche(c){
 function pintarComparador(){
   const selA=document.getElementById('cmpA'), selB=document.getElementById('cmpB');
   const a=selA.value, b=selB.value;
-  const orde=[...DATA.inventario].sort((x,y)=>x.precio-y.precio);
+  const orde=[...DATA.inventario].sort((x,y)=>(x.ref||'zzz').localeCompare(y.ref||'zzz'));
   selA.innerHTML=orde.map(c=>`<option value="${c.id}" ${c.id===a?'selected':''}>${esc(etiquetaCoche(c))}</option>`).join('');
   if(!selA.value){
     const nov=(DATA.novedades||[])[0]||orde[0];
@@ -775,6 +776,24 @@ if(DATA){
     th.addEventListener('click',()=>{const k=th.dataset.k;orden=orden.k===k?{k,asc:!orden.asc}:{k,asc:true};refresco()});
   });
   refresco();
+  // recarga forzada (cache-bust) para uso como app
+  const recargar=()=>location.replace(location.pathname.split('?')[0]+'?t='+Date.now());
+  document.getElementById('btnRefrescar').onclick=e=>{e.preventDefault();recargar()};
+  // al volver a la app: si los datos tienen >60 min, refrescar una vez por sesión
+  const edadDatos=()=>{
+    const E=(DATA&&DATA.estado)||{};
+    if(!E.fecha)return 0;
+    return (Date.now()-new Date(E.fecha.replace(' UTC','Z')).getTime())/36e5;
+  };
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible'
+       && !sessionStorage.getItem('yaRefrescado')
+       && edadDatos()>1){
+      sessionStorage.setItem('yaRefrescado','1');
+      recargar();
+    }
+  });
+
   // botón subir
   const bSub=document.getElementById('subirArriba');
   bSub.onclick=()=>window.scrollTo({top:0,behavior:'smooth'});
