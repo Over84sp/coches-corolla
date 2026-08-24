@@ -128,6 +128,7 @@
 
 <div class="grid" id="chartsGrid">
   <div class="card"><h3>Distribución de precios</h3><div id="c1"></div></div>
+  <div class="card"><h3>Distribución de kilómetros</h3><div id="c11"></div></div>
   <div class="card"><h3>Precio vs kilometraje</h3><div id="c2"></div></div>
   <div class="card"><h3>Modelo · unidades y precio medio</h3><div id="c3"></div></div>
   <div class="card"><h3>Año de matriculación</h3><div id="c4"></div></div>
@@ -286,6 +287,34 @@ function c1(I){
       `</div>`;
   });
   html+=`<p class=mini style="margin:8px 0 0">⚖️ La mitad de los coches cuestan menos de <b style="color:var(--warn)">${fmtE(med)}</b> — es el tramo con borde naranja. Cada fila = tramo de ${mil(paso)} mil €.</p>`;
+  box.innerHTML=html;
+}
+
+function c11(I){
+  const box=document.getElementById('c11');
+  const P=I.map(c=>c.km).filter(k=>k!=null).sort((a,b)=>a-b);
+  if(!P.length){box.innerHTML='<p class=mini>sin coches con estos filtros</p>';return}
+  const min=P[0], max=P[P.length-1];
+  const pasos=[10000,15000,20000,25000,30000,40000,50000];
+  const paso=pasos.find(s=>Math.ceil((max-min)/s)<=8)||50000;
+  const mil=v=>(v/1000).toLocaleString('es-ES',{maximumFractionDigits:1});
+  const b0=Math.floor(min/paso)*paso, nb=Math.ceil((max-b0)/paso);
+  const bins=new Array(nb).fill(0);
+  P.forEach(p=>bins[Math.min(nb-1,Math.floor((p-b0)/paso))]++);
+  const mx=Math.max(...bins);
+  const med=P[Math.floor(P.length/2)];
+  const tramoMed=Math.min(nb-1,Math.floor((med-b0)/paso));
+  let html=`<p class=mini style="margin:2px 0 8px">Coches por tramo de kilómetros (total ${I.length})</p>`;
+  bins.forEach((n,i)=>{
+    const desde=b0+i*paso, hasta=desde+paso;
+    const pct=Math.round(n/I.length*100);
+    html+=`<div class=hrow title="entre ${fmtN(desde)} y ${fmtN(hasta)} km: ${n} coche${n>1?'s':''}${n?` (${pct}%)`:''}">`+
+      `<span class=hlab>${mil(desde)}–${mil(hasta)} mil km</span>`+
+      (n?`<div class="hbar${i===tramoMed?' mediana':''}" style="width:${Math.max(26,Math.round((n/mx)*Math.max(120,(box.clientWidth||360)-120)))}px">${n}</div><span class=mini>${pct}%</span>`
+        :`<div class="hbar vacio" style="width:12px"></div><span class=hnada>ninguno</span>`)+
+      `</div>`;
+  });
+  html+=`<p class=mini style="margin:8px 0 0">⚖️ La mitad de los coches tienen menos de <b style="color:var(--warn)">${fmtN(med)} km</b> — tramo con borde naranja. Cada fila = tramo de ${mil(paso)} mil km.</p>`;
   box.innerHTML=html;
 }
 
@@ -750,7 +779,7 @@ function refresco(){
   document.querySelector('#fCV .lab').textContent = F.modelo.size ? `Modelo (${F.modelo.size})` : 'Modelo';
   document.querySelector('#fTrim .lab').textContent = F.trim.size ? `Acabado (${F.trim.size})` : 'Acabado';
   const I=filtrar();
-  kpis(I);c1(I);c2(I);c3(I);c4(I);c5(I);c6();c7();c8(I);c9(I);c10();
+  kpis(I);c1(I);c11(I);c2(I);c3(I);c4(I);c5(I);c6();c7();c8(I);c9(I);c10();
   novedadesSec();estadoSec();rankingSec(I);tabla(I);
 }
 
