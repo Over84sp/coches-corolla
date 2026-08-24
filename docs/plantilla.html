@@ -76,8 +76,9 @@
   .filtros .grupo{flex:0 0 auto}
   @media(min-width:780px){.filtros{flex-wrap:wrap;overflow:visible}}
   @media(max-width:640px){
-    #tbl th:nth-child(6),#tbl td:nth-child(6),
-    #tbl th:nth-child(8),#tbl td:nth-child(8){display:none}
+    #tbl th:nth-child(7),#tbl td:nth-child(7),
+    #tbl th:nth-child(8),#tbl td:nth-child(8),
+    #tbl th:nth-child(10),#tbl td:nth-child(10){display:none}
     thead th,tbody td{padding:8px 8px}
     #cmpA,#cmpB{max-width:100%}
   }
@@ -164,7 +165,7 @@
   <table id="tbl">
     <thead><tr>
       <th data-k="precio">💶 Precio ⇅</th><th data-k="anyo">Año ⇅</th><th data-k="km">km ⇅</th>
-      <th data-k="cv">CV ⇅</th><th>Coche</th><th>Lugar</th><th>Vendedor</th><th data-k="visto">Visto ⇅</th>
+      <th data-k="cv">CV ⇅</th><th>Coche</th><th data-k="_rk">Rank ⇅</th><th>Lugar</th><th>Vendedor</th><th data-k="publicado">Publicado ⇅</th><th data-k="visto">Visto ⇅</th>
     </tr></thead>
     <tbody></tbody>
   </table>
@@ -514,9 +515,9 @@ function c10(){
 function novedadesSec(){
   const box=document.getElementById('novedadesSec');
   const N=DATA.novedades||[];
-  let html=`<h3>🆕 Novedades de la última tirada</h3>`;
+  let html=`<h3>🆕 Novedades de hoy ${N.length?`<span class=tag>${N.length}</span>`:''}</h3>`;
   if(!N.length){
-    html+=`<p class=mini style="margin:0 0 8px">Sin coches nuevos esta vez — a la próxima 🤞 (tiradas a las 08:30 y 20:30)</p>`;
+    html+=`<p class=mini style="margin:0 0 8px">Todavía sin novedades hoy — tiradas a las 08:30 y 20:30 🤞</p>`;
     box.innerHTML=html; return;
   }
   html+=`<div class="rankcards">`;
@@ -570,6 +571,10 @@ function pintarComparador(){
   const a=selA.value, b=selB.value;
   const orde=[...DATA.inventario].sort((x,y)=>x.precio-y.precio);
   selA.innerHTML=orde.map(c=>`<option value="${c.id}" ${c.id===a?'selected':''}>${esc(etiquetaCoche(c))}</option>`).join('');
+  if(!selA.value){
+    const nov=(DATA.novedades||[])[0]||orde[0];
+    if(nov) selA.value=nov.id;
+  }
   const bops=orde.filter(c=>c.id!==a);
   selB.innerHTML=`<option value="auto" ${b==='auto'?'selected':''}>🤖 el mejor rival (automático)</option>`+
     bops.map(c=>`<option value="${c.id}" ${c.id===b?'selected':''}>${esc(etiquetaCoche(c))}</option>`).join('');
@@ -696,11 +701,18 @@ function filaCoche(c){
   const badge=((r&&r.pos)?`<span class=rkn title="puntuación ${r.score}">🏆${r.pos}</span>`:'')+
               (c.precio<=target?`<span class=rkn title="bajo tu objetivo de compra" style="color:var(--ok)">🎯</span>`:'');
   return `<tr><td class=num><b>${fmtE(c.precio)}</b></td><td class=num>${c.anyo}</td><td class=num>${fmtN(c.km)}</td>`+
-    `<td class=num>${c.cv}</td><td>${c.ref?`<b style="color:var(--ac)">${c.ref}</b> `:''}${badge}<a href="${c.url}">${esc(c.titulo)}</a>${extra} ${marks}<div class=mini>${trimDe(c.titulo)}${c.publicado?' · publicado '+c.publicado:''}</div></td>`+
-    `<td>${esc(c.lugares)}</td><td class=mini>${esc(c.vendedor||'—')}${c.rating?' ⭐'+c.rating:''}</td><td class=mini>${c.visto}</td></tr>`;
+    `<td class=num>${c.cv}</td><td>${c.ref?`<b style="color:var(--ac)">${c.ref}</b> `:''}${badge}<a href="${c.url}">${esc(c.titulo)}</a>${extra} ${marks}<div class=mini>${trimDe(c.titulo)}</div></td>`+
+    `<td class=num title="score ${((RANK.m[c.id]||{}).score)??'—'}">${c._rk?`<b style="color:${c._rk<=3?'var(--ok)':'var(--tx2)'}">#${c._rk}</b>`:'—'}</td>`+
+    `<td>${esc(c.lugares)}</td><td class=mini>${esc(c.vendedor||'—')}${c.rating?' ⭐'+c.rating:''}</td>`+
+    `<td class=mini>${c.publicado||'—'}</td><td class=mini>${c.visto}</td></tr>`;
 }
 function tabla(I){
   const tb=document.querySelector('#tbl tbody');
+  // ranking dinámico: posiciones recalculadas sobre los coches que pasan los filtros
+  [...I].filter(c=>(RANK.m[c.id]||{}).score!=null)
+    .sort((a,b)=>RANK.m[b.id].score-RANK.m[a.id].score)
+    .forEach((c,i)=>{c._rk=i+1});
+  I.forEach(c=>{if(!c._rk)c._rk=0});
   let html='';
   if(F.vista==='lista'){
     const rows=[...I].sort((a,b)=>{const A=a[orden.k],B=b[orden.k];return(typeof A=='number'?A-B:(''+A).localeCompare(''+B))*(orden.asc?1:-1)});
@@ -712,11 +724,11 @@ function tabla(I){
     Object.entries(grupos)
       .sort((a,b)=>F.vista==='modelo'?parseInt(a[0])-parseInt(b[0]):a[0].localeCompare(b[0]))
       .forEach(([k,g])=>{
-        html+=`<tr class=sec><td colspan=8>${F.vista==='modelo'?'⚡':'🚘'} ${esc(k)} · ${g.length} coches · desde ${fmtE(Math.min(...g.map(c=>c.precio)))}</td></tr>`;
+        html+=`<tr class=sec><td colspan=10>${F.vista==='modelo'?'⚡':'🚘'} ${esc(k)} · ${g.length} coches · desde ${fmtE(Math.min(...g.map(c=>c.precio)))}</td></tr>`;
         html+=[...g].sort((a,b)=>a.precio-b.precio).map(filaCoche).join('');
       });
   }
-  tb.innerHTML=html||'<tr><td colspan=8 class=mini style="padding:20px">sin coches con estos filtros</td></tr>';
+  tb.innerHTML=html||'<tr><td colspan=10 class=mini style="padding:20px">sin coches con estos filtros</td></tr>';
 }
 
 /* ─── filtros UI ─── */

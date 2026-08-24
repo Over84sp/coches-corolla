@@ -478,8 +478,16 @@ def write_site(inv_groups, inv_ads_count, new_group_ids, drop_group_ids, now_iso
     for c in inventario:
         c["ref"] = refs.get(c["id"], "")
 
-    # ── comentarios de la IA SOLO para novedades ──
-    nuevos = [c for c in inventario if c["nuevo"]]
+    # ── novedades del DÍA (todas las tiradas de hoy) + comentarios IA ──
+    primer_dia = {}
+    if CSV_FILE.exists():
+        for row in csv.DictReader(CSV_FILE.open(encoding="utf-8")):
+            primer_dia[row.get("id")] = (row.get("first_seen") or "")[:10]
+    hoy = now_iso[:10]
+    nuevos = [c for c in inventario
+              if c["nuevo"] or primer_dia.get(c["id"]) == hoy]
+    nuevos.sort(key=lambda c: (c.get("publicado") or ""), reverse=True)
+    nuevos = nuevos[:12]
     com_file = STATE_DIR / "comentarios.csv"
     comentarios = {}
     if com_file.exists():
