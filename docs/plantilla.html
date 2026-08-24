@@ -117,12 +117,13 @@ const TRIMS = [['GR Sport',/gr\s?sport/i],['Advance',/advance/i],['Style',/style
                ['Active',/active/i],['Business',/business/i]];
 const trimDe = t => { for(const [n,re] of TRIMS) if(re.test(t)) return n; return 'Otro'; };
 
-/* ─── estado de filtros ─── */
-let F = {modelo:'all', trim:'all', vista:'lista'};
+/* ─── estado de filtros (acumulativos: multi-selección toggle) ─── */
+let F = {modelo:new Set(), trim:new Set(), vista:'lista'};
 
 function filtrar(){
   return DATA.inventario.filter(c =>
-    (F.modelo==='all' || versionDe(c)===F.modelo) && (F.trim==='all' || trimDe(c.titulo)===F.trim));
+    (!F.modelo.size || F.modelo.has(versionDe(c))) &&
+    (!F.trim.size || F.trim.has(trimDe(c.titulo))));
 }
 
 /* ─── ranking: IA o heurístico ─── */
@@ -188,12 +189,12 @@ function c1(I){
   const P=I.map(c=>c.precio).filter(p=>p>0).sort((a,b)=>a-b);
   if(!P.length){box.innerHTML='<p class=mini>sin coches con estos filtros</p>';return}
   const min=P[0], max=P[P.length-1];
-  const pasos=[1000,1500,2000,2500,3000,4000,5000];
-  const paso=pasos.find(s=>Math.ceil((max-min)/s)<=11)||5000;
+  const pasos=[1500,2000,2500,3000,4000,5000];
+  const paso=pasos.find(s=>Math.ceil((max-min)/s)<=10)||5000;
   const b0=Math.floor(min/paso)*paso, nb=Math.ceil((max-b0)/paso)+1;
   const bins=new Array(nb).fill(0);
   P.forEach(p=>bins[Math.min(nb-1,Math.floor((p-b0)/paso))]++);
-  const W=440,H=212,padL=34,padB=30,padT=18;
+  const W=440,H=218,padL=34,padB=36,padT=18;
   const bw=(W-padL-12)/nb, mx=Math.max(...bins);
   const Y=n=>H-padB-(H-padB-padT)*(n/mx);
   let s=svgEl(W,H);
@@ -212,11 +213,12 @@ function c1(I){
       s+=`<rect x=${x+bw/2-1.5} y=${H-padB-2} width=3 height=2 fill=#26304d/>`;
     }
   });
-  const cada=nb>8?2:1;
+  const cada=nb>7?2:1;
   for(let i=0;i<=nb;i++){
     const x=padL+i*bw;
-    s+=`<line x1=${x} y1=${H-padB} x2=${x} y2=${H-padB+4} stroke=#4a5878/>`;
-    if(i%cada===0)s+=`<text x=${x} y=${H-padB+16} fill=#9aa7bd font-size=9 text-anchor=middle>${((b0+i*paso)/1000).toLocaleString('es-ES',{maximumFractionDigits:1})}k</text>`;
+    const visible=(i%cada===0)||(i===nb);
+    s+=`<line x1=${x} y1=${H-padB} x2=${x} y2=${H-padB+5} stroke=#6b7a9e/>`;
+    if(visible)s+=`<text x=${i===nb?x-2:x} y=${H-padB+18} fill=#c9d4e8 font-size=11.5 font-weight=600 text-anchor=middle>${((b0+i*paso)/1000).toLocaleString('es-ES',{maximumFractionDigits:1})}k</text>`;
   }
   s+=`<line x1=${padL} y1=${H-padB} x2=${W-8} y2=${H-padB} stroke=#26304d/>`;
   const med=P[Math.floor(P.length/2)];
@@ -543,27 +545,39 @@ function tabla(I){
 /* ─── filtros UI ─── */
 function chip(txt,on,fn){const b=document.createElement('button');b.className='chip'+(on?' on':'');b.textContent=txt;b.onclick=fn;return b}
 function construirFiltros(){
-  const modelos=[...new Set(DATA.inventario.map(versionDe))].sort();
+  const toggle=(host,val,conjunto)=>{
+    const b=document.createElement('button');
+    b.className='chip';
+    b.textContent=val;
+    b.dataset.v=val;
+    b.onclick=()=>{conjunto.has(val)?conjunto.delete(val):conjunto.add(val);refresco()};
+    host.appendChild(b);
+  };
   const g1=document.getElementById('fCV');
-  g1.appendChild(chip('Todos',F.modelo==='all',()=>{F.modelo='all';refresco()}));
-  modelos.forEach(v=>g1.appendChild(chip(v,F.modelo===v,()=>{F.modelo=v;refresco()})));
-  const trims=[...new Set(DATA.inventario.map(c=>trimDe(c.titulo)))].sort((a,b)=>a.localeCompare(b));
+  [...new Set(DATA.inventario.map(versionDe))].sort()
+    .forEach(v=>{const b=document.createElement('button');b.className='chip';b.textContent=v;b.dataset.f='modelo';b.dataset.v=v;
+      b.onclick=()=>{F.modelo.has(v)?F.modelo.delete(v):F.modelo.add(v);refresco()};g1.appendChild(b)});
   const g2=document.getElementById('fTrim');
-  g2.appendChild(chip('Todos',F.trim==='all',()=>{F.trim='all';refresco()}));
-  trims.forEach(t=>g2.appendChild(chip(t,F.trim===t,()=>{F.trim=t;refresco()})));
+  [...new Set(DATA.inventario.map(c=>trimDe(c.titulo)))].sort((a,b)=>a.localeCompare(b))
+    .forEach(t=>{const b=document.createElement('button');b.className='chip';b.textContent=t;b.dataset.f='trim';b.dataset.v=t;
+      b.onclick=()=>{F.trim.has(t)?F.trim.delete(t):F.trim.add(t);refresco()};g2.appendChild(b)});
   const g3=document.getElementById('fVista');
-  [['lista','📋 Lista'],['modelo','⚡ Por modelo'],['acabado','🚘 Por acabado']].forEach(([v,t])=>
-    g3.appendChild(chip(t,F.vista===v,()=>{F.vista=v;refresco()})));
+  [['lista','📋 Lista'],['modelo','⚡ Por modelo'],['acabado','🚘 Por acabado']].forEach(([v,t])=>{
+    const b=document.createElement('button');b.className='chip';b.textContent=t;b.dataset.f='vista';b.dataset.v=v;
+    b.onclick=()=>{F.vista=v;refresco()};g3.appendChild(b)});
   const g4=document.getElementById('fReset');
-  g4.appendChild(chip('✕ limpiar',false,()=>{F={modelo:'all',trim:'all',vista:'lista'};refresco()}));
+  const b=document.createElement('button');b.className='chip';b.textContent='✕ limpiar';b.dataset.f='reset';
+  b.onclick=()=>{F={modelo:new Set(),trim:new Set(),vista:'lista'};refresco()};g4.appendChild(b);
 }
 function refresco(){
-  const modelos=[...new Set(DATA.inventario.map(versionDe))].sort();
-  document.querySelectorAll('#fCV .chip').forEach((b,i)=>b.classList.toggle('on', i===0?F.modelo==='all':F.modelo===modelos[i-1]));
-  const trims=[...new Set(DATA.inventario.map(c=>trimDe(c.titulo)))].sort((a,b)=>a.localeCompare(b));
-  document.querySelectorAll('#fTrim .chip').forEach((b,i)=>b.classList.toggle('on', i===0?F.trim==='all':F.trim===trims[i-1]));
-  const vistas=['lista','modelo','acabado'];
-  document.querySelectorAll('#fVista .chip').forEach((b,i)=>b.classList.toggle('on',F.vista===vistas[i]));
+  document.querySelectorAll('.chip').forEach(b=>{
+    if(b.dataset.f==='modelo') b.classList.toggle('on',F.modelo.has(b.dataset.v));
+    else if(b.dataset.f==='trim') b.classList.toggle('on',F.trim.has(b.dataset.v));
+    else if(b.dataset.f==='vista') b.classList.toggle('on',F.vista===b.dataset.v);
+    else b.classList.remove('on');
+  });
+  document.querySelector('#fCV .lab').textContent = F.modelo.size ? `Modelo (${F.modelo.size})` : 'Modelo';
+  document.querySelector('#fTrim .lab').textContent = F.trim.size ? `Acabado (${F.trim.size})` : 'Acabado';
   const I=filtrar();
   kpis(I);c1(I);c2(I);c3(I);c4(I);c5(I);c6();c7();c8(I);c9(I);c10();
   novedadesSec();estadoSec();rankingSec(I);tabla(I);
