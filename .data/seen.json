@@ -1241,7 +1241,7 @@
   "id": "71191386",
   "published": "2026-07-30",
   "title": "TOYOTA Corolla 140H Active Plus Touring Sport",
-  "price": 26910,
+  "price": 26900,
   "year": 2025,
   "km": 16500,
   "hp": 140,
@@ -1473,8 +1473,9 @@
   "seller_name": "Tallers Ballús, S.L.",
   "seller_rating": 4.1,
   "tipo": "Ocasión",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20440537/fe758c9d-c6d8-498b-81a4-a27d5e1f04a2.jpg",
   "url": "https://www.coches.net/toyota-corolla-20-180h-grsport-ecvt-touring-sport-5p-electrico-hibrido-2022-en-barcelona-71094495-covo.aspx",
-  "last_seen": "2026-08-23"
+  "last_seen": "2026-08-24"
  },
  "71165611": {
   "id": "71165611",
@@ -1534,6 +1535,26 @@
   "tipo": "Ocasión",
   "foto": "https://pro.fastly.ccdn.es/pro/pro/vehicles/images/dc/dc7d2784-0100-46f8-a593-8024757fe218",
   "url": "https://www.coches.net/toyota-corolla-140h-style-touring-sport-5p-electrico-hibrido-2023-en-madrid-71351651-covo.aspx",
+  "last_seen": "2026-08-24"
+ },
+ "70058302": {
+  "id": "70058302",
+  "published": "2026-07-22",
+  "title": "TOYOTA Corolla 200H Style EditionTouring Sport",
+  "price": 33700,
+  "year": 2025,
+  "km": 8900,
+  "hp": 196,
+  "fuel": "Híbrido",
+  "label": "ECO",
+  "province": "Madrid",
+  "city": "Leganés",
+  "seller_type": "Profesional",
+  "seller_name": "Comauto Sur",
+  "seller_rating": 3.5,
+  "tipo": "Ocasión",
+  "foto": "https://a.ccdn.es/cnet/vehicles/19566564/beaac83f-4b19-4456-8316-a2c576fdc0ba.jpg",
+  "url": "https://www.coches.net/toyota-corolla-200h-style-editiontouring-sport-5p-electrico-hibrido-2024-en-madrid-70058302-covo.aspx",
   "last_seen": "2026-08-24"
  }
 }
