@@ -195,7 +195,7 @@ def normalize(ad: dict, now_iso: str) -> dict:
 
 CSV_FIELDS = ["id", "first_seen", "published", "title", "price", "year", "km", "hp",
               "fuel", "label", "province", "city", "seller_type", "seller_name",
-              "seller_rating", "tipo", "url"]
+              "seller_rating", "tipo", "foto", "url"]
 
 
 def state_passes_filters(v: dict) -> bool:
