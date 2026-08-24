@@ -1492,7 +1492,28 @@
   "seller_name": "Renting distribución Europa (RDE)",
   "seller_rating": 3.8,
   "tipo": "Ocasión",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20501087/7793a961-2481-4b96-80f4-fcb977a46406.jpg",
   "url": "https://www.coches.net/toyota-corolla-20-180h-advance-luxury-touring-sport-5p-electrico-hibrido-2022-en-madrid-71165611-covo.aspx",
-  "last_seen": "2026-08-23"
+  "last_seen": "2026-08-24"
+ },
+ "71350599": {
+  "id": "71350599",
+  "published": "2026-08-24",
+  "title": "TOYOTA Corolla 2.0 180H GRSPORT ECVT TOURING SPORT",
+  "price": 26990,
+  "year": 2022,
+  "km": 64848,
+  "hp": 180,
+  "fuel": "Híbrido",
+  "label": "",
+  "province": "Barcelona",
+  "city": "Terrassa",
+  "seller_type": "Profesional",
+  "seller_name": "Flexicar Terrassa - Can Parellada",
+  "seller_rating": "",
+  "tipo": "Ocasión",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20596721/925403fb-3649-48cd-9908-b3865859f99d.jpg",
+  "url": "https://www.coches.net/toyota-corolla-20-180h-grsport-ecvt-touring-sport-5p-electrico-hibrido-2022-en-barcelona-71350599-covo.aspx",
+  "last_seen": "2026-08-24"
  }
 }
