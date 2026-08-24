@@ -124,6 +124,7 @@
   <div class="grupo" id="fTrim"><span class="lab">Acabado</span></div>
   <div class="grupo" id="fVista"><span class="lab">Vista</span></div>
   <div class="grupo" id="fReset"></div>
+  <div class="grupo" id="fExport"><span class="lab">Exportar</span><button class="chip" id="btnCSV" title="Descarga en CSV los coches que estás viendo (respeta los filtros)">⬇️ CSV</button></div>
 </div>
 
 <div class="grid" id="chartsGrid">
@@ -811,6 +812,28 @@ if(DATA){
       recargar();
     }
   });
+
+  // exportar CSV (respeta filtros)
+  document.getElementById('btnCSV').onclick=()=>{
+    const I=filtrar();
+    if(!I.length){alert('No hay coches que exportar con estos filtros');return}
+    const rk={};
+    [...I].filter(c=>(RANK.m[c.id]||{}).score!=null)
+      .sort((a,b)=>RANK.m[b.id].score-RANK.m[a.id].score)
+      .forEach((c,i)=>rk[c.id]=i+1);
+    const esc=v=>{v=(v==null?'':String(v));return /[",;\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+    const cab=['ref','precio_eur','anyo','km','modelo','cv','acabado','titulo','lugar','vendedor','valoracion','tipo','publicado','visto','n_anuncios','rank','url','todas_las_urls'];
+    const filas=I.map(c=>[c.ref,c.precio,c.anyo,c.km,versionDe(c),c.cv,trimDe(c.titulo),
+      c.lugares,c.vendedor,c.rating,c.tipo,c.publicado,c.visto,c.n,rk[c.id]||'',
+      c.url,(c.urls||[]).join(' | ')]
+      .map(esc).join(';'));
+    const csv='\ufeff'+cab.join(';')+'\n'+filas.join('\n');
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+    const filtros=[...(F.modelo||[])].concat([...(F.trim||[])]);
+    a.download='corolla-ts-'+new Date().toISOString().slice(0,10)+(filtros.length?'-'+filtros.join('_'):'')+'.csv';
+    document.body.appendChild(a);a.click();a.remove();
+  };
 
   // botón subir
   const bSub=document.getElementById('subirArriba');
