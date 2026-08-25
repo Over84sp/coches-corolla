@@ -414,7 +414,7 @@
   "seller_name": "Grupo Gamboa KM0, Demos y Dirección",
   "seller_rating": "",
   "tipo": "Km0/Demo",
-  "foto": "https://a.ccdn.es/cnet/vehicles/20613923/fd1e6c5b-0e6a-4909-8d40-309f729ab8fe.jpg",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20613923/d0b717a9-795f-4ec6-adc9-badb3bbef903.jpg",
   "url": "https://www.coches.net/km-0/toyota/corolla/madrid/140h-active-plus-touring-sport-electrico-hibrido-de-km0-71294990-kovn.aspx",
   "last_seen": "2026-08-25"
  },
@@ -454,7 +454,7 @@
   "seller_name": "Grupo Gamboa KM0, Demos y Dirección",
   "seller_rating": "",
   "tipo": "Km0/Demo",
-  "foto": "https://a.ccdn.es/cnet/vehicles/20578558/fa5e0bf5-eea4-421b-9130-73833da6051f.jpg",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20578558/e1f10165-5b6d-481a-85b6-30fcf939b6f9.jpg",
   "url": "https://www.coches.net/km-0/toyota/corolla/madrid/200h-style-editiontouring-sport-electrico-hibrido-de-km0-71272020-kovn.aspx",
   "last_seen": "2026-08-25"
  },
@@ -1555,6 +1555,26 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/19566564/beaac83f-4b19-4456-8316-a2c576fdc0ba.jpg",
   "url": "https://www.coches.net/toyota-corolla-200h-style-editiontouring-sport-5p-electrico-hibrido-2024-en-madrid-70058302-covo.aspx",
+  "last_seen": "2026-08-25"
+ },
+ "71358061": {
+  "id": "71358061",
+  "published": "2026-08-25",
+  "title": "TOYOTA Corolla 140H GRSport Touring Sport",
+  "price": 28790,
+  "year": 2023,
+  "km": 48467,
+  "hp": 140,
+  "fuel": "Híbrido",
+  "label": "ECO",
+  "province": "Castellón",
+  "city": "Castellón de la Plana / Castelló de la Plana",
+  "seller_type": "Profesional",
+  "seller_name": "Flexicar Castellon",
+  "seller_rating": "",
+  "tipo": "Ocasión",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20484885/2fbc03e6-dc42-41eb-a94e-0ab0c717851a.jpg",
+  "url": "https://www.coches.net/toyota-corolla-140h-grsport-touring-sport-5p-electrico-hibrido-2023-en-castellon-71358061-covo.aspx",
   "last_seen": "2026-08-25"
  }
 }
