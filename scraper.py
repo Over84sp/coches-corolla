@@ -608,13 +608,43 @@ def write_site(inv_groups, inv_ads_count, new_group_ids, drop_group_ids, now_iso
         objetivos.append({"modelo": mod, "objetivo": obj, "minimo": min(ps),
                           "debajo": sum(1 for x in ps if x <= obj)})
 
+    # ── rebajas recientes (14 días) para el dashboard ──
+    hace14 = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=14)).strftime("%Y-%m-%d")
+    rebajas_recientes = []
+    rebajas_file = STATE_DIR / "rebajas.csv"
+    if rebajas_file.exists():
+        for row in csv.DictReader(rebajas_file.open(encoding="utf-8")):
+            try:
+                if (row.get("fecha") or "")[:10] < hace14:
+                    continue
+                nuevo, anterior = int(row["precio_nuevo"]), int(row["precio_anterior"])
+                url_ad = (merged.get(row["id"]) or {}).get("url", "")
+                rebajas_recientes.append({
+                    "fecha": row["fecha"][:10], "id": row["id"],
+                    "ref": refs.get(row["id"], ""), "titulo": row["titulo"],
+                    "modelo": version_de(row["titulo"], None),
+                    "url": url_ad,
+                    "precio_anterior": anterior, "precio_nuevo": nuevo,
+                    "dif": anterior - nuevo})
+            except (KeyError, ValueError):
+                pass
+    rebajas_recientes.sort(key=lambda r: r["fecha"], reverse=True)
+    hace7 = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)).strftime("%Y-%m-%d")
+    ult7 = {r["id"]: r for r in rebajas_recientes if r["fecha"] >= hace7}
+    for c in inventario:
+        if c["id"] in ult7:
+            c["rebajado"] = True
+            c["rebaja_info"] = {"de": ult7[c["id"]]["precio_anterior"],
+                                "a": ult7[c["id"]]["precio_nuevo"],
+                                "fecha": ult7[c["id"]]["fecha"]}
+
     datos = {"actualizado": now_iso, "config": f"≥{MIN_YEAR} · ≥{MIN_HP} CV",
              "anuncios": inv_ads_count, "rebajas": len(drop_group_ids),
              "inventario": inventario, "historico": historico,
              "comentariosIA": comentarios, "novedades": nuevos,
              "estado": estado, "ejecuciones": ejecuciones[-30:],
              "historicoModelos": historico_modelos, "salidas": salidas_todas,
-             "objetivos": objetivos}
+             "objetivos": objetivos, "rebajas": rebajas_recientes}
     html = plantilla.read_text(encoding="utf-8").replace(
         "/*DATOS*/null", json.dumps(datos, ensure_ascii=False))
     (site_dir / "index.html").write_text(html, encoding="utf-8")
@@ -718,6 +748,22 @@ def main() -> int:
                 if a["id"] in prior_prices and prior_prices[a["id"]] is not None]
         if olds and g[0]["price"] is not None and g[0]["price"] < min(olds):
             drop_groups.append((g, min(olds)))
+
+    # ── registro persistente de rebajas (nivel anuncio) ──
+    nuevas_rebajas = []
+    for a in matched:
+        prev_p = prior_prices.get(a["id"])
+        if prev_p is not None and a["price"] is not None and a["price"] < prev_p:
+            nuevas_rebajas.append([now_iso[:16], a["id"], a["titulo"][:44],
+                                   a["price"], prev_p])
+    rebajas_file = STATE_DIR / "rebajas.csv"
+    if nuevas_rebajas:
+        sin_cab = not rebajas_file.exists()
+        with rebajas_file.open("a", newline="", encoding="utf-8") as fh:
+            w = csv.writer(fh)
+            if sin_cab:
+                w.writerow(["fecha", "id", "titulo", "precio_nuevo", "precio_anterior"])
+            w.writerows(nuevas_rebajas)
 
     save_state(merged, new_ads)
 

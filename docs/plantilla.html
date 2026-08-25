@@ -143,6 +143,8 @@
 
 <div class="rankwrap card" id="novedadesSec" style="padding-bottom:14px"></div>
 
+<div class="rankwrap card" id="rebajasSec" style="padding-bottom:14px"></div>
+
 <div class="rankwrap card" id="cmpSec" style="padding-bottom:14px">
   <h3>⚔️ Comparador <span class="tag" style="margin-left:4px">dos coches · o vs mejor rival</span></h3>
   <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0 10px">
@@ -258,7 +260,7 @@ function kpis(I){
     ['a', fmtE(med), 'precio mediano'],
     ['', fmtN(kmMed)+' km', 'km medios'],
     ['g', I.filter(c=>c.visto>=hace2).length, 'vistos últimas 48 h'],
-    ['w', DATA.rebajas, 'rebajas última tirada'],
+    ['w', (DATA.rebajas||[]).filter(r=>r.fecha>=new Date(Date.now()-7*864e5).toISOString().slice(0,10)).length, 'rebajas en 7 días'],
   ].map(k=>`<div class="kpi ${k[0]}"><div class="v">${k[1]}</div><div class="l">${k[2]}</div></div>`).join('');
 }
 
@@ -573,6 +575,34 @@ function estadoSec(){
   </div>`;
 }
 
+/* ─── rebajas recientes ─── */
+function rebajasSec(){
+  const box=document.getElementById('rebajasSec');
+  const R=(DATA.rebajas||[]).filter(r=>
+    (F.modelo.size===0||F.modelo.has(r.modelo)) &&
+    (F.trim.size===0||F.trim.has(trimDe(r.titulo||''))));
+  const hace7=new Date(Date.now()-7*864e5).toISOString().slice(0,10);
+  const r7=R.filter(r=>r.fecha>=hace7);
+  let html=`<h3>📉 Rebajas ${R.length?`<span class=tag>${r7.length} en 7 días · ${R.length} en 14</span>`:''}</h3>`;
+  if(!R.length){
+    html+=`<p class=mini style="margin:0 0 6px">Sin rebajas en los últimos 14 días — cuando un concesionario baje un precio, aparecerá aquí con el importe exacto.</p>`;
+    box.innerHTML=html;return;
+  }
+  const media=r7.length?Math.round(r7.reduce((s,r)=>s+r.dif,0)/r7.length):null;
+  if(media) html+=`<p class=mini style="margin:0 0 8px">Bajada media (7 días): <b style="color:var(--warn)">−${fmtE(media)}</b></p>`;
+  html+=`<table style="font-size:13.5px">`;
+  R.slice(0,15).forEach(r=>{
+    const pct=(r.dif/r.precio_anterior*100).toFixed(1).replace('.',',');
+    const dias=Math.round((Date.now()-new Date(r.fecha).getTime())/864e5);
+    html+=`<tr><td class=mini style="white-space:nowrap;padding:5px 8px 5px 0;color:var(--tx2)">${r.fecha}${dias<2?' <b style="color:var(--ok)">hoy</b>':''}</td>`+
+      `<td style="padding:5px 8px">${r.ref?`<b style="color:var(--ac)">${r.ref}</b> · `:''}${r.modelo} · ${r.url?`<a href="${r.url}" target="_blank" rel="noopener" style="color:var(--tx)">${esc((r.titulo||'').slice(0,40))}</a>`:esc((r.titulo||'').slice(0,40))}</td>`+
+      `<td class=num style="white-space:nowrap;padding:5px 8px"><s style="color:var(--tx2)">${fmtE(r.precio_anterior)}</s> → <b>${fmtE(r.precio_nuevo)}</b></td>`+
+      `<td class=num style="white-space:nowrap;padding:5px 0 5px 8px;color:var(--warn)"><b>−${fmtE(r.dif)}</b> <span class=mini>(−${pct}%)</span></td></tr>`;
+  });
+  html+=`</table><p class=mini style="margin:8px 0 0">Los coches rebajados llevan 📉 en la tabla. Las rebajas suelen indicar vendedor con prisa por vender.</p>`;
+  box.innerHTML=html;
+}
+
 /* ─── comparador ─── */
 function etiquetaCoche(c){return `${c.ref?c.ref+' · ':''}${fmtE(c.precio)} · ${versionDe(c)} · ${fmtN(c.km)} km · ${c.anyo} · ${(c.lugares||'').split('(')[0]}`}
 function mejorRival(c){
@@ -714,7 +744,10 @@ function rankingSec(I){
 let orden={k:'precio',asc:true};
 function filaCoche(c){
   const extra=c.urls.slice(1).map((u,i)=>` <a href="${u}">·${i+2}ª</a>`).join('');
-  const marks=(c.nuevo?'<span class=nuevo>🆕</span> ':'')+(c.rebajado?'<span class=baja>📉</span> ':'')+(c.n>1?`<span class=tag>×${c.n}</span>`:'');
+  const ri=c.rebaja_info;
+  const marks=(c.nuevo?'<span class=nuevo>🆕</span> ':'')+
+    (ri?`<span class=baja title="bajó de ${fmtE(ri.de)} a ${fmtE(ri.a)} el ${ri.fecha}">📉 −${fmtE(ri.de-ri.a)}</span> `:'')+
+    (c.n>1?`<span class=tag>×${c.n}</span>`:'');
   const r=RANK.m[c.id];
   const obj=(DATA.objetivos||[]).find(o=>o.modelo===versionDe(c));
   const target=(obj&&obj.objetivo)||Infinity;
@@ -781,7 +814,7 @@ function refresco(){
   document.querySelector('#fTrim .lab').textContent = F.trim.size ? `Acabado (${F.trim.size})` : 'Acabado';
   const I=filtrar();
   kpis(I);c1(I);c11(I);c2(I);c3(I);c4(I);c5(I);c6();c7();c8(I);c9(I);c10();
-  novedadesSec();estadoSec();rankingSec(I);tabla(I);
+  novedadesSec();rebajasSec();estadoSec();rankingSec(I);tabla(I);
 }
 
 /* ─── arranque ─── */
