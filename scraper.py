@@ -749,23 +749,28 @@ def main() -> int:
         if olds and g[0]["price"] is not None and g[0]["price"] < min(olds):
             drop_groups.append((g, min(olds)))
 
-    # ── registro persistente de rebajas (nivel anuncio) ──
-    nuevas_rebajas = []
-    for a in matched:
-        prev_p = prior_prices.get(a["id"])
-        if prev_p is not None and a["price"] is not None and a["price"] < prev_p:
-            nuevas_rebajas.append([now_iso[:16], a["id"], a["titulo"][:44],
-                                   a["price"], prev_p])
-    rebajas_file = STATE_DIR / "rebajas.csv"
-    if nuevas_rebajas:
-        sin_cab = not rebajas_file.exists()
-        with rebajas_file.open("a", newline="", encoding="utf-8") as fh:
-            w = csv.writer(fh)
-            if sin_cab:
-                w.writerow(["fecha", "id", "titulo", "precio_nuevo", "precio_anterior"])
-            w.writerows(nuevas_rebajas)
-
     save_state(merged, new_ads)
+
+    # ── registro persistente de rebajas (nivel anuncio) ──
+    # (tras guardar el estado: si esto fallara, la tirada no se pierde)
+    try:
+        nuevas_rebajas = []
+        for a in matched:
+            prev_p = prior_prices.get(a["id"])
+            if prev_p is not None and a["price"] is not None and a["price"] < prev_p:
+                nuevas_rebajas.append([now_iso[:16], a["id"],
+                                       (a.get("title") or "")[:44],
+                                       a["price"], prev_p])
+        rebajas_file = STATE_DIR / "rebajas.csv"
+        if nuevas_rebajas:
+            sin_cab = not rebajas_file.exists()
+            with rebajas_file.open("a", newline="", encoding="utf-8") as fh:
+                w = csv.writer(fh)
+                if sin_cab:
+                    w.writerow(["fecha", "id", "titulo", "precio_nuevo", "precio_anterior"])
+                w.writerows(nuevas_rebajas)
+    except Exception as exc:  # noqa: BLE001
+        log(f"⚠ No se pudo registrar la rebaja en el log: {str(exc)[:90]}")
 
     log("")
     if new_groups:
