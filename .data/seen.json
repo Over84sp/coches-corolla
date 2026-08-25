@@ -262,7 +262,7 @@
   "id": "71322242",
   "published": "2026-08-19",
   "title": "TOYOTA Corolla 200H Style Touring Sport",
-  "price": 22699,
+  "price": 22199,
   "year": 2022,
   "km": 55114,
   "hp": 196,
@@ -282,7 +282,7 @@
   "id": "71322059",
   "published": "2026-08-19",
   "title": "TOYOTA Corolla 200H Style Touring Sport",
-  "price": 22699,
+  "price": 22199,
   "year": 2022,
   "km": 55114,
   "hp": 196,
@@ -1455,7 +1455,7 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20497688/d04f4cd9-42bf-4cad-acce-efe8790950b6.jpg",
   "url": "https://www.coches.net/toyota-corolla-200h-grsport-touring-sport-5p-electrico-hibrido-2024-en-madrid-71156824-covo.aspx",
-  "last_seen": "2026-08-24"
+  "last_seen": "2026-08-25"
  },
  "71094495": {
   "id": "71094495",
@@ -1575,6 +1575,26 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20484885/2fbc03e6-dc42-41eb-a94e-0ab0c717851a.jpg",
   "url": "https://www.coches.net/toyota-corolla-140h-grsport-touring-sport-5p-electrico-hibrido-2023-en-castellon-71358061-covo.aspx",
+  "last_seen": "2026-08-25"
+ },
+ "71359571": {
+  "id": "71359571",
+  "published": "2026-08-25",
+  "title": "TOYOTA Corolla 140H Active Plus Touring Sport",
+  "price": 22985,
+  "year": 2024,
+  "km": 59632,
+  "hp": 140,
+  "fuel": "Híbrido",
+  "label": "ECO",
+  "province": "Sta. C. Tenerife",
+  "city": "San Cristóbal de la Laguna",
+  "seller_type": "Profesional",
+  "seller_name": "Miguel León",
+  "seller_rating": 4.6,
+  "tipo": "Ocasión",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20626553/685eedbd-5bdc-4ca2-9587-07e8a7495b30.jpg",
+  "url": "https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2023-en-sta-c-tenerife-71359571-covo.aspx",
   "last_seen": "2026-08-25"
  }
 }
