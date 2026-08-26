@@ -480,6 +480,15 @@ function c7(){
   const ley=modelos.map(m=>`<tspan fill=${COLMOD[m]||'#9aa7bd'}>■ ${m}</tspan>`).join(' ');
   s+=`<text x=${W-6} y=14 fill=#9aa7bd font-size=10 text-anchor=end>${ley}</text></svg>`;
   box.innerHTML=s;
+  // resumen textual: pérdida media por año de edad
+  const resumen=modelos.map(m=>{
+    const pts=años.map(a=>({a,v:med(a,m)})).filter(p=>p.v!=null);
+    if(pts.length<2) return null;
+    const pend=Math.round((pts[pts.length-1].v-pts[0].v)/(pts[pts.length-1].a-pts[0].a));
+    return `<b style="color:${COLMOD[m]||'#9aa7bd'}">${m}</b> −${fmtE(Math.abs(pend))}/año`;
+  }).filter(Boolean).join(' · ');
+  if(resumen)
+    box.innerHTML+=`<p class=mini style="margin:6px 0 0">Cada punto = precio mediano de los coches matriculados ese año. Caída media por año de edad: ${resumen}.</p>`;
 }
 
 /* ─── c8: mediana de precio por año de matrícula, por modelo ─── */
@@ -846,6 +855,8 @@ if(DATA){
   document.getElementById('sub').innerHTML =
     `Toyota Corolla Touring Sports · <b>${DATA.config}</b> · ${DATA.inventario.length} coches · actualizado ${esc(DATA.actualizado)}`;
   construirFiltros();
+  // filtro por defecto al cargar: 200H (objetivo prioritario)
+  if(DATA.inventario.some(c=>versionDe(c)==='200H')) F.modelo.add('200H');
   pintarComparador(); configurarKey();
   document.querySelectorAll('#tbl th[data-k]').forEach(th=>{
     th.addEventListener('click',()=>{const k=th.dataset.k;orden=orden.k===k?{k,asc:!orden.asc}:{k,asc:true};refresco()});
