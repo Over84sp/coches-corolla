@@ -566,12 +566,10 @@ function estadoSec(){
   const hace=(Date.now()-new Date(E.fecha.replace(' UTC','Z')).getTime())/36e5;
   const semaforo=hace<8?'#7ee787':(hace<22?'#ffb86c':'#ff7b72');
   const txt=hace<8?'todo en orden':(hace<22?'última tirada antigua — revisa Actions':'sin tiradas recientes — algo falla');
-  const puntos=runs.slice(-24).map(r=>`<span title="${r.fecha} · ${r.anuncios} anuncios${r.nuevos?' · '+r.nuevos+' nuevos':''}${r.aviso?' · '+r.aviso:''}" style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:3px;background:${r.anuncios>0?'#7ee787':'#ff7b72'}"></span>`).join('');
   box.innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center">
     <div><span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:${semaforo};margin-right:7px"></span><b>${txt}</b></div>
     <div class=mini>📡 actualizado <b>${esc(E.fecha)}</b> (hace ${hace<1?Math.round(hace*60)+' min':hace.toFixed(1)+' h'})</div>
     <div class=mini>⏭️ próxima tirada ~ <b>${esc(E.proxima||'08:30/20:30')}</b> (10:30/22:30 en España)</div>
-    <div class=mini>📊 últimas tiradas: ${puntos}<span style="color:var(--tx2);font-size:11px">verde=OK</span></div>
   </div>`;
 }
 
@@ -619,7 +617,7 @@ function specCoche(c){
 function pintarComparador(){
   const selA=document.getElementById('cmpA'), selB=document.getElementById('cmpB');
   const a=selA.value, b=selB.value;
-  const orde=[...DATA.inventario].sort((x,y)=>(x.ref||'zzz').localeCompare(y.ref||'zzz'));
+  const orde=[...DATA.inventario].sort((x,y)=>(y.ref||'zzz').localeCompare(x.ref||'zzz'));
   selA.innerHTML=orde.map(c=>`<option value="${c.id}" ${c.id===a?'selected':''}>${esc(etiquetaCoche(c))}</option>`).join('');
   if(!selA.value){
     const nov=(DATA.novedades||[])[0]||orde[0];
