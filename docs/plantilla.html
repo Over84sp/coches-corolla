@@ -212,6 +212,7 @@ function irACoche(ref){
     }
   },380);
 }
+function limpiarFiltros(){F.modelo.clear();F.trim.clear();refresco()}
 const refLink=x=>{
   const r=(x&&typeof x==='object')?x.ref:x;
   return r?`<a href="#" class="reflink" onclick="irACoche('${r}');return false">${r}</a>`:'';
@@ -813,7 +814,10 @@ function tabla(I){
         html+=[...g].sort((a,b)=>a.precio-b.precio).map(filaCoche).join('');
       });
   }
-  tb.innerHTML=html||'<tr><td colspan=10 class=mini style="padding:20px">sin coches con estos filtros</td></tr>';
+  tb.innerHTML=html||`<tr><td colspan=10 class=mini style="padding:22px;text-align:center">
+    Sin coches con estos filtros (${[...F.modelo].join(', ')}${[F.modelo.size&&F.trim.size?' + ':'']}${[...F.trim].join(', ')})
+    <br><br><button class="chip on" onclick="limpiarFiltros()">✕ Quitar filtros y ver los ${DATA.inventario.length} coches</button>
+  </td></tr>`;
 }
 
 /* ─── filtros UI ─── */
