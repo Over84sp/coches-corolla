@@ -404,7 +404,7 @@
   "title": "TOYOTA Corolla 140H Active Plus Touring Sport",
   "price": 27000,
   "year": 2026,
-  "km": 1319,
+  "km": 2243,
   "hp": 140,
   "fuel": "Híbrido",
   "label": "ECO",
@@ -1241,7 +1241,7 @@
   "id": "71191386",
   "published": "2026-07-30",
   "title": "TOYOTA Corolla 140H Active Plus Touring Sport",
-  "price": 26900,
+  "price": 26890,
   "year": 2025,
   "km": 16500,
   "hp": 140,
@@ -1495,7 +1495,7 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20501087/7793a961-2481-4b96-80f4-fcb977a46406.jpg",
   "url": "https://www.coches.net/toyota-corolla-20-180h-advance-luxury-touring-sport-5p-electrico-hibrido-2022-en-madrid-71165611-covo.aspx",
-  "last_seen": "2026-08-25"
+  "last_seen": "2026-08-26"
  },
  "71350599": {
   "id": "71350599",
@@ -1675,6 +1675,26 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20659920/daf4fe4a-142b-4455-b0ed-96bceff66f23.jpg",
   "url": "https://www.coches.net/toyota-corolla-140h-active-touring-sport-5p-electrico-hibrido-2026-en-valencia-71361893-covo.aspx",
+  "last_seen": "2026-08-26"
+ },
+ "71371474": {
+  "id": "71371474",
+  "published": "2026-08-26",
+  "title": "TOYOTA Corolla 2.0 180H STYLE ECVT TOURING SPORT",
+  "price": 25500,
+  "year": 2022,
+  "km": 56026,
+  "hp": 180,
+  "fuel": "Híbrido",
+  "label": "ECO",
+  "province": "Madrid",
+  "city": "Majadahonda",
+  "seller_type": "Profesional",
+  "seller_name": "Toyota Kobe Motor seminuevos y ocasión",
+  "seller_rating": 4,
+  "tipo": "Ocasión",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20648299/56405450-2752-484f-a14e-a454ed0f91d5.jpg",
+  "url": "https://www.coches.net/toyota-corolla-20-180h-style-ecvt-touring-sport-5p-electrico-hibrido-2022-en-madrid-71371474-covo.aspx",
   "last_seen": "2026-08-26"
  }
 }
