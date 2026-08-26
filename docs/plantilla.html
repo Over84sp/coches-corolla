@@ -274,19 +274,28 @@ const COMIA = DATA.comentariosIA || {};
 
 /* ─── KPIs ─── */
 function kpis(I){
+  const T = DATA.inventario;                       // total, sin filtros
   const P = I.map(c=>c.precio).sort((a,b)=>a-b);
+  const filtrando = I.length !== T.length;
+  const par = (a,b) => filtrando ? `${a} <span class=mini>(${b})</span>` : `${a}`;
   const med = P.length ? P[Math.floor(P.length/2)] : null;
   const kmMed = I.length ? Math.round(I.reduce((s,c)=>s+(c.km||0),0)/I.length) : null;
   const hace2 = new Date(Date.now()-2*864e5).toISOString().slice(0,10);
-  const anuncios = I.reduce((s,c)=>s+(c.n||1),0);
+  const hace7 = new Date(Date.now()-7*864e5).toISOString().slice(0,10);
+  const rec = I.filter(c=>c.visto>=hace2).length, recT = T.filter(c=>c.visto>=hace2).length;
+  const an = I.reduce((s,c)=>s+(c.n||1),0), anT = T.reduce((s,c)=>s+(c.n||1),0);
+  const pasaR = r => (!F.modelo.size||F.modelo.has(r.modelo)) &&
+                     (!F.trim.size||F.trim.has(trimDe(r.titulo||'')));
+  const R7 = (DATA.rebajas||[]).filter(r=>r.fecha>=hace7);
+  const r7 = R7.filter(pasaR).length;
   document.getElementById('kpis').innerHTML = [
-    ['a', I.length, 'coches (filtrados)'],
-    ['', anuncios, 'anuncios con multilistings'],
+    ['a', par(I.length,T.length), 'coches' + (filtrando?' · filtro activo':'')],
+    ['', par(an,anT), 'anuncios con multilistings'],
     ['g', fmtE(P[0]), 'el más barato'],
     ['a', fmtE(med), 'precio mediano'],
     ['', fmtN(kmMed)+' km', 'km medios'],
-    ['g', I.filter(c=>c.visto>=hace2).length, 'vistos últimas 48 h'],
-    ['w', (DATA.rebajas||[]).filter(r=>r.fecha>=new Date(Date.now()-7*864e5).toISOString().slice(0,10)).length, 'rebajas en 7 días'],
+    ['g', par(rec,recT), 'vistos últimas 48 h'],
+    ['w', par(r7,R7.length), 'rebajas en 7 días'],
   ].map(k=>`<div class="kpi ${k[0]}"><div class="v">${k[1]}</div><div class="l">${k[2]}</div></div>`).join('');
 }
 
@@ -570,8 +579,12 @@ function c10(){
 /* ─── novedades ─── */
 function novedadesSec(){
   const box=document.getElementById('novedadesSec');
-  const N=DATA.novedades||[];
-  let html=`<h3>🆕 Novedades de hoy ${N.length?`<span class=tag>${N.length}</span>`:''}</h3>`;
+  const todas=DATA.novedades||[];
+  const N=todas.filter(c=>
+    (!F.modelo.size||F.modelo.has(versionDe(c))) &&
+    (!F.trim.size||F.trim.has(trimDe(c.titulo))));
+  const parcial=(F.modelo.size||F.trim.size)&&N.length!==todas.length;
+  let html=`<h3>🆕 Novedades de hoy ${N.length?`<span class=tag>${parcial?N.length+' de '+todas.length:N.length}</span>`:''}</h3>`;
   if(!N.length){
     html+=`<p class=mini style="margin:0 0 8px">Todavía sin novedades hoy — tiradas a las 08:30 y 20:30 🤞</p>`;
     box.innerHTML=html; return;
@@ -654,7 +667,8 @@ function pintarComparador(){
   const orde=[...DATA.inventario].sort((x,y)=>(y.ref||'zzz').localeCompare(x.ref||'zzz'));
   selA.innerHTML=orde.map(c=>`<option value="${c.id}" ${c.id===a?'selected':''}>${esc(etiquetaCoche(c))}</option>`).join('');
   if(!selA.value){
-    const nov=(DATA.novedades||[])[0]||orde[0];
+    const pasa=c=>(!F.modelo.size||F.modelo.has(versionDe(c)))&&(!F.trim.size||F.trim.has(trimDe(c.titulo)));
+    const nov=(DATA.novedades||[]).find(pasa)||orde[0];
     if(nov) selA.value=nov.id;
   }
   const bops=orde.filter(c=>c.id!==a);
@@ -839,6 +853,7 @@ function construirFiltros(){
   b.onclick=()=>{F={modelo:new Set(),trim:new Set(),vista:'lista'};refresco()};g4.appendChild(b);
 }
 function refresco(){
+  try{localStorage.setItem('filtroModelo',[...F.modelo].join(','))}catch(e){}
   document.querySelectorAll('.chip').forEach(b=>{
     if(b.dataset.f==='modelo') b.classList.toggle('on',F.modelo.has(b.dataset.v));
     else if(b.dataset.f==='trim') b.classList.toggle('on',F.trim.has(b.dataset.v));
@@ -860,6 +875,12 @@ if(DATA){
   document.getElementById('sub').innerHTML =
     `Toyota Corolla Touring Sports · <b>${DATA.config}</b> · ${DATA.inventario.length} coches · actualizado ${esc(DATA.actualizado)}`;
   construirFiltros();
+  // filtro por defecto al cargar: 200H (se recuerda tu última elección)
+  try{
+    const guardado=localStorage.getItem('filtroModelo');
+    if(guardado!=null){ guardado.split(',').filter(Boolean).forEach(v=>F.modelo.add(v)); }
+    else if(DATA.inventario.some(c=>versionDe(c)==='200H')) F.modelo.add('200H');
+  }catch(e){}
   pintarComparador(); configurarKey();
   document.querySelectorAll('#tbl th[data-k]').forEach(th=>{
     th.addEventListener('click',()=>{const k=th.dataset.k;orden=orden.k===k?{k,asc:!orden.asc}:{k,asc:true};refresco()});
