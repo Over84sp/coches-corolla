@@ -77,7 +77,7 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20456102/64fb3cc4-f1eb-489e-a701-706dcb0e7703.jpg",
   "url": "https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2023-en-barcelona-71117052-covo.aspx",
-  "last_seen": "2026-08-27"
+  "last_seen": "2026-08-28"
  },
  "71217828": {
   "id": "71217828",
@@ -1495,7 +1495,7 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20501087/7793a961-2481-4b96-80f4-fcb977a46406.jpg",
   "url": "https://www.coches.net/toyota-corolla-20-180h-advance-luxury-touring-sport-5p-electrico-hibrido-2022-en-madrid-71165611-covo.aspx",
-  "last_seen": "2026-08-27"
+  "last_seen": "2026-08-28"
  },
  "71350599": {
   "id": "71350599",
@@ -1773,8 +1773,68 @@
   "seller_name": "Trevauto SL",
   "seller_rating": 4.1,
   "tipo": "Ocasión",
-  "foto": "https://a.ccdn.es/cnet/vehicles/20674540/42aa6fe6-d343-4d4a-bb6b-c5ccd8b4e102.jpg",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20674540/cd67237b-0960-4790-b268-aafed5a6138c.jpg",
   "url": "https://www.coches.net/toyota-corolla-20-180h-style-ecvt-touring-sport-5p-electrico-hibrido-2022-en-badajoz-71378542-covo.aspx",
+  "last_seen": "2026-08-28"
+ },
+ "71383552": {
+  "id": "71383552",
+  "published": "2026-08-28",
+  "title": "TOYOTA Corolla 140H Style Touring Sport",
+  "price": 23900,
+  "year": 2023,
+  "km": 100329,
+  "hp": 140,
+  "fuel": "Híbrido",
+  "label": "",
+  "province": "Murcia",
+  "city": "Murcia",
+  "seller_type": "Profesional",
+  "seller_name": "Gougo",
+  "seller_rating": 3.6,
+  "tipo": "Ocasión",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20662629/aca17770-6425-4664-b73a-d77261fab073.jpg",
+  "url": "https://www.coches.net/toyota-corolla-140h-style-touring-sport-5p-electrico-hibrido-2023-en-murcia-71383552-covo.aspx",
+  "last_seen": "2026-08-28"
+ },
+ "71382248": {
+  "id": "71382248",
+  "published": "2026-08-28",
+  "title": "TOYOTA Corolla 140H Style Touring Sport",
+  "price": 29990,
+  "year": 2026,
+  "km": 5,
+  "hp": 140,
+  "fuel": "Híbrido",
+  "label": "ECO",
+  "province": "Madrid",
+  "city": "Alcobendas",
+  "seller_type": "Profesional",
+  "seller_name": "MUNDOAUTO",
+  "seller_rating": 4.6,
+  "tipo": "Ocasión",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20677525/f4a9083c-c365-46b6-84af-27b58919bb44.jpg",
+  "url": "https://www.coches.net/toyota-corolla-140h-style-touring-sport-5p-electrico-hibrido-2025-en-madrid-71382248-covo.aspx",
+  "last_seen": "2026-08-28"
+ },
+ "71381990": {
+  "id": "71381990",
+  "published": "2026-08-28",
+  "title": "TOYOTA Corolla 140H Active Plus Touring Sport",
+  "price": 26900,
+  "year": 2025,
+  "km": 8800,
+  "hp": 140,
+  "fuel": "Híbrido",
+  "label": "ECO",
+  "province": "Ciudad Real",
+  "city": "Ciudad Real",
+  "seller_type": "Profesional",
+  "seller_name": "TRESA MOTOR, S.L.U. (TOYOTA CIUDAD REAL)",
+  "seller_rating": "",
+  "tipo": "Ocasión",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20677349/73b3dc40-8c51-451d-9189-c3607e88c01a.jpg",
+  "url": "https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2023-en-ciudad-real-71381990-covo.aspx",
   "last_seen": "2026-08-28"
  }
 }
