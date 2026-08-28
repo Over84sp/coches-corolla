@@ -425,6 +425,7 @@ def verificar_ausentes(merged: dict, ids_hoy: set, now_iso: str) -> list:
                     pass
             vendidos.append({"fecha": v.get("last_seen", "")[:10], "confirmado": hoy,
                              "id": v.get("id"), "modelo": version_de(v.get("title", ""), v.get("hp")),
+                             "titulo": (v.get("title") or "")[:44], "url": v.get("url") or "",
                              "precio": v.get("price") or 0, "dias": dias})
             log(f"   💰 VENDIDO {v.get('title','')[:40]} · {v.get('price')} € "
                 f"(última vez visto {v.get('last_seen','')[:10]})")
@@ -618,17 +619,24 @@ def write_site(inv_groups, inv_ads_count, new_group_ids, drop_group_ids, now_iso
                           "minimo": f[3], "mediano": f[4], "medio": f[5]} for f in filas_mod]
 
     # ── vendidos verificados (+ legado de salidas.csv sin verificar) ──
+    hist_urls = {}
+    if CSV_FILE.exists():
+        for row in csv.DictReader(CSV_FILE.open(encoding="utf-8")):
+            if row.get("id") and row.get("id") not in hist_urls:
+                hist_urls[row["id"]] = (row.get("url") or "", row.get("title") or "")
     vendidos_todos = []
     ven_file = STATE_DIR / "vendidos.csv"
     if ven_file.exists():
         for row in csv.DictReader(ven_file.open(encoding="utf-8")):
             try:
+                vid = row.get("id")
                 vendidos_todos.append({
                     "fecha": (row.get("fecha") or "")[:10],
                     "confirmado": (row.get("confirmado") or row.get("fecha") or "")[:10],
-                    "id": row.get("id"), "ref": refs.get(row.get("id"), ""),
+                    "id": vid, "ref": refs.get(vid, ""),
                     "modelo": row.get("modelo") or "",
-                    "titulo": (row.get("titulo") or ""),
+                    "titulo": (row.get("titulo") or "") or hist_urls.get(vid, ("",))[1],
+                    "url": row.get("url") or hist_urls.get(vid, ("",))[0],
                     "precio": int(row["precio"] or 0),
                     "dias": int(row["dias"] or 0) if row.get("dias") else None})
             except (KeyError, ValueError):
@@ -810,10 +818,10 @@ def main() -> int:
             with ven_file.open("a", newline="", encoding="utf-8") as fh:
                 w = csv.writer(fh)
                 if sin_cab:
-                    w.writerow(["fecha", "confirmado", "id", "modelo", "precio", "dias"])
+                    w.writerow(["fecha", "confirmado", "id", "modelo", "titulo", "url", "precio", "dias"])
                 for vd in vendidos_hoy:
-                    w.writerow([vd["fecha"], vd["confirmado"], vd["id"],
-                                vd["modelo"], vd["precio"], vd["dias"]])
+                    w.writerow([vd["fecha"], vd["confirmado"], vd["id"], vd["modelo"],
+                                vd.get("titulo", ""), vd.get("url", ""), vd["precio"], vd["dias"]])
     except Exception as exc:  # noqa: BLE001
         log(f"⚠ Verificación de ausentes falló: {str(exc)[:90]}")
 

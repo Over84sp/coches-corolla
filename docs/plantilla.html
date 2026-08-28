@@ -684,6 +684,7 @@ function vendidosSec(){
       `${v.ref?`<b style="color:var(--tx2)">${v.ref}</b>`:''}<b style="color:${COLMOD[v.modelo]||'var(--tx)'}">${v.modelo}</b>`+
       `<b>${fmtE(v.precio)}</b>`+
       (v.dias!=null&&v.dias!==''?`<span class=mini>${v.dias} días en venta</span>`:'')+
+      (v.url?`<a href="${v.url}" class=mini>ver anuncio ↗</a>`:'')+
       `<span class=mini style="margin-left:auto">última vez visto ${v.fecha.slice(5)}</span></div>`;
   });
   if(mes.length>1){
