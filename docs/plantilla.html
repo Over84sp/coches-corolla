@@ -76,9 +76,9 @@
   .filtros .grupo{flex:0 0 auto}
   @media(min-width:780px){.filtros{flex-wrap:wrap;overflow:visible}}
   @media(max-width:640px){
+    #tbl th:nth-child(6),#tbl td:nth-child(6),
     #tbl th:nth-child(7),#tbl td:nth-child(7),
-    #tbl th:nth-child(8),#tbl td:nth-child(8),
-    #tbl th:nth-child(10),#tbl td:nth-child(10){display:none}
+    #tbl th:nth-child(9),#tbl td:nth-child(9){display:none}
     thead th,tbody td{padding:8px 8px}
     #cmpA,#cmpB{max-width:100%}
   }
@@ -182,7 +182,7 @@
   <table id="tbl">
     <thead><tr>
       <th data-k="precio">💶 Precio ⇅</th><th data-k="anyo">Año ⇅</th><th data-k="km">km ⇅</th>
-      <th data-k="cv">CV ⇅</th><th>Coche</th><th data-k="_rk">Rank ⇅</th><th>Lugar</th><th>Vendedor</th><th data-k="publicado">Publicado ⇅</th><th data-k="visto">Visto ⇅</th>
+      <th>Coche</th><th data-k="_rk">Rank ⇅</th><th>Lugar</th><th>Vendedor</th><th data-k="publicado">Publicado ⇅</th><th data-k="visto">Visto ⇅</th>
     </tr></thead>
     <tbody></tbody>
   </table>
@@ -394,7 +394,7 @@ function c3(I){
   let s=svgEl(W,H), y=6;
   filas.forEach(f=>{
     const w=(W-150)*(f.n/mx);
-    s+=`<text x=0 y=${y+14} fill=#e6edf3 font-size=12>${f.mod}</text>`+
+    s+=`<text x=0 y=${y+14} fill=${COLMOD[f.mod]||'#e6edf3'} font-size=12 font-weight=700>${f.mod}</text>`+
        `<rect x=52 y=${y+2} width=${w} height=18 rx=4 fill=#7ee787 opacity=.75><title>${f.n} coches</title></rect>`+
        `<text x=${56+w} y=${y+15} fill=#9aa7bd font-size=11>${f.n}</text>`+
        `<text x=${W-2} y=${y+15} fill=#9aa7bd font-size=10 text-anchor=end>medio ${fmtE(f.med)}</text>`;
@@ -468,6 +468,7 @@ function c6(){
 }
 
 const COLMOD = {'140H':'#7ee787','180H':'#4cc2ff','200H':'#ffb86c','Otro':'#9aa7bd'};
+const modChip = m => `<b style="color:${COLMOD[m]||'var(--tx)'}">${m}</b>`;
 
 /* ─── c7: mediana por modelo en el tiempo ─── */
 function c7(){
@@ -614,7 +615,7 @@ function novedadesSec(){
       ${c.foto?`<img src="${c.foto}" alt="" loading="lazy" style="width:100%;height:110px;object-fit:cover;border-radius:9px;margin-bottom:7px" onerror="this.remove()">`:''}
       <span class="score">${c.precio<=tgt?'🎯':''}</span>
       <div class="tit"><a href="${c.url}">${esc(c.titulo)}</a>${c.n>1?` <span class=tag>×${c.n}</span>`:''}</div>
-      <div class="spec">${refLink(c)?refLink(c)+' · ':''}${fmtE(c.precio)} · ${c.anyo} · ${fmtN(c.km)} km · ${versionDe(c)} · ${esc(c.lugares)}${c.rating?` · ⭐${c.rating}`:''}</div>
+      <div class="spec">${refLink(c)?refLink(c)+' · ':''}${fmtE(c.precio)} · ${c.anyo} · ${fmtN(c.km)} km · ${modChip(versionDe(c))} · ${esc(c.lugares)}${c.rating?` · ⭐${c.rating}`:''}</div>
       ${c.comentarioIA?`<div class="com" style="color:var(--ac)">💬 ${esc(c.comentarioIA)}</div>`:`<div class="mini" style="margin-top:7px">(sin comentario IA esta vez)</div>`}
     </div>`;
   });
@@ -656,7 +657,7 @@ function rebajasSec(){
     const dias=Math.round((Date.now()-new Date(r.fecha).getTime())/864e5);
     html+=`<div style="display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;padding:8px 0;border-top:1px solid #1d2740">`+
       `<span class=mini style="color:var(--tx2)">${dias<2?'<b style="color:var(--ok)">hoy</b>':r.fecha.slice(5)}</span>`+
-      `${refLink(r.ref)}<b>${r.modelo}</b>`+
+      `${refLink(r.ref)}${modChip(r.modelo)}`+
       `<span class=mini><s style="color:var(--tx2)">${fmtE(r.precio_anterior)}</s> → <b style="color:var(--tx)">${fmtE(r.precio_nuevo)}</b></span>`+
       `${r.url?`<a href="${r.url}" class=mini>anuncio ↗</a>`:''}`+
       `<b style="color:var(--warn);margin-left:auto">📉 −${fmtE(r.dif)}</b></div>`;
@@ -748,8 +749,8 @@ function comparar(){
   if(oB&&B.precio<=oB) razones.push('🎯 B ya está bajo el objetivo de su modelo');
   document.getElementById('cmpOut').innerHTML=
     `<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px">
-      <div style="flex:1;min-width:200px;background:var(--card2);border-radius:12px;padding:10px"><b style="color:var(--ac)">A</b>${A.ref?` · ${refLink(A)}`:''} · <a href="${A.url}">${esc(A.titulo)}</a><div class=mini>${esc(A.lugares)} · ${esc(A.vendedor||'')}</div></div>
-      <div style="flex:1;min-width:200px;background:var(--card2);border-radius:12px;padding:10px"><b style="color:var(--ok)">B</b>${B.ref?` · ${refLink(B)}`:''}${autoTxt} · <a href="${B.url}">${esc(B.titulo)}</a><div class=mini>${esc(B.lugares)} · ${esc(B.vendedor||'')}</div></div>
+      <div style="flex:1;min-width:200px;background:var(--card2);border-radius:12px;padding:10px"><b style="color:var(--ac)">A</b>${A.ref?` · ${refLink(A)}`:''} · ${modChip(versionDe(A))} · <a href="${A.url}">${esc(A.titulo)}</a><div class=mini>${esc(A.lugares)} · ${esc(A.vendedor||'')}</div></div>
+      <div style="flex:1;min-width:200px;background:var(--card2);border-radius:12px;padding:10px"><b style="color:var(--ok)">B</b>${B.ref?` · ${refLink(B)}`:''} · ${modChip(versionDe(B))}${autoTxt} · <a href="${B.url}">${esc(B.titulo)}</a><div class=mini>${esc(B.lugares)} · ${esc(B.vendedor||'')}</div></div>
     </div>
     <table style="font-size:13px">${fila('💶 precio',fmtE(A.precio),fmtE(B.precio))}${fila('año',A.anyo,B.anyo)}${fila('km',fmtN(A.km),fmtN(B.km))}${fila('km/año',fmtN(sA.kmAno),fmtN(sB.kmAno))}${fila('€ por 10.000 km',fmtN(sA.eur10k),fmtN(sB.eur10k))}${fila('score',sA.score??'—',sB.score??'—')}</table>
     <ul class=mini style="margin:8px 0 0 18px">${razones.map(r=>`<li style="margin:2px 0">${r}</li>`).join('')}</ul>`;
@@ -824,7 +825,7 @@ function rankingSec(I){
     html += `<div class="rk ${r.pos<=3?'medalla':''}">
       <span class="pos">${pos}</span><span class="score">${r.score}</span>
       <div class="tit"><a href="${c.url}">${esc(c.titulo)}</a>${c.n>1?` <span class=tag>×${c.n}</span>`:''}</div>
-      <div class="spec">${refLink(c)?refLink(c)+' · ':''}${fmtE(c.precio)} · ${c.anyo} · ${fmtN(c.km)} km · ${c.cv} CV · ${esc(c.lugares)}${c.rating?` · ⭐${c.rating}`:''}</div>
+      <div class="spec">${refLink(c)?refLink(c)+' · ':''}${fmtE(c.precio)} · ${c.anyo} · ${fmtN(c.km)} km · ${modChip(versionDe(c))} · ${esc(c.lugares)}${c.rating?` · ⭐${c.rating}`:''}</div>
       <div class="com">“${esc(r.com)}”</div>
       ${COMIA[c.id]?`<div class="com" style="color:var(--ac)">💬 IA: “${esc(COMIA[c.id])}”</div>`:''}
     </div>`;
@@ -847,7 +848,7 @@ function filaCoche(c){
   const badge=((r&&r.pos)?`<span class=rkn title="puntuación ${r.score}">🏆${r.pos}</span>`:'')+
               (c.precio<=target?`<span class=rkn title="bajo tu objetivo de compra" style="color:var(--ok)">🎯</span>`:'');
   return `<tr id="fila-${c.ref||c.id}"><td class=num><b>${fmtE(c.precio)}</b></td><td class=num>${c.anyo}</td><td class=num>${fmtN(c.km)}</td>`+
-    `<td class=num>${c.cv}</td><td>${c.ref?`<b style="color:var(--ac)">${c.ref}</b> `:''}${badge}<a href="${c.url}">${esc(c.titulo)}</a>${extra} ${marks}<div class=mini>${trimDe(c.titulo)}</div></td>`+
+    `<td>${c.ref?`<b style="color:var(--ac)">${c.ref}</b> `:''}${badge}<a href="${c.url}">${esc(c.titulo)}</a>${extra} ${marks}<div class=mini>${modChip(versionDe(c))} · ${trimDe(c.titulo)}</div></td>`+
     `<td class=num title="score ${((RANK.m[c.id]||{}).score)??'—'}">${c._rk?`<b style="color:${c._rk<=3?'var(--ok)':'var(--tx2)'}">#${c._rk}</b>`:'—'}</td>`+
     `<td>${esc(c.lugares)}</td><td class=mini>${esc(c.vendedor||'—')}${c.rating?' ⭐'+c.rating:''}</td>`+
     `<td class=mini>${c.publicado||'—'}</td><td class=mini>${c.visto}</td></tr>`;
@@ -870,11 +871,11 @@ function tabla(I){
     Object.entries(grupos)
       .sort((a,b)=>F.vista==='modelo'?parseInt(a[0])-parseInt(b[0]):a[0].localeCompare(b[0]))
       .forEach(([k,g])=>{
-        html+=`<tr class=sec><td colspan=10>${F.vista==='modelo'?'⚡':'🚘'} ${esc(k)} · ${g.length} coches · desde ${fmtE(Math.min(...g.map(c=>c.precio)))}</td></tr>`;
+        html+=`<tr class=sec><td colspan=9>${F.vista==='modelo'?'⚡':'🚘'} ${F.vista==='modelo'?modChip(k):esc(k)} · ${g.length} coches · desde ${fmtE(Math.min(...g.map(c=>c.precio)))}</td></tr>`;
         html+=[...g].sort((a,b)=>a.precio-b.precio).map(filaCoche).join('');
       });
   }
-  tb.innerHTML=html||`<tr><td colspan=10 class=mini style="padding:22px;text-align:center">
+  tb.innerHTML=html||`<tr><td colspan=9 class=mini style="padding:22px;text-align:center">
     Sin coches con estos filtros (${[...F.modelo].join(', ')}${[F.modelo.size&&F.trim.size?' + ':'']}${[...F.trim].join(', ')})
     <br><br><button class="chip on" onclick="limpiarFiltros()">✕ Quitar filtros y ver los ${DATA.inventario.length} coches</button>
   </td></tr>`;
