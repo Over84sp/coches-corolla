@@ -379,7 +379,7 @@ def _curl_estado(url: str):
         marker = out.rfind(b"\n@@HTTP:")
         estado = out[marker + 8:].decode("ascii", "ignore").strip() if marker >= 0 else "0"
         cuerpo = (out[:marker] if marker >= 0 else out).decode("utf-8", "ignore")
-        return estado, cuerpo[:4000]
+        return estado, cuerpo[:25000]
     except Exception:  # noqa: BLE001
         return "0", ""
 
@@ -408,7 +408,13 @@ def verificar_ausentes(merged: dict, ids_hoy: set, now_iso: str) -> list:
     vendidos = []
     for v in cand:
         estado, cuerpo = _curl_estado(v["url"])
-        if estado in ("301", "302", "303", "307", "308", "404"):
+        marcado_muerto = any(m in cuerpo for m in (
+            '"AD_NOT_AVAILABLE":true', "anuncio no disponible",
+            "ya no está disponible", "este anuncio ya no"))
+        vivo = str(v.get("id")) in cuerpo
+        log(f"   · {v.get('title','')[:32]} → HTTP {estado}"
+            f" {'VENDIDO(retirado)' if estado in ('301','302','303','307','308','404') or marcado_muerto else ('vivo' if vivo else 'dudoso, reintento')}")
+        if estado in ("301", "302", "303", "307", "308", "404") or marcado_muerto:
             dias = ""
             f0 = primer_dia.get(v.get("id"), "")
             if f0 and v.get("last_seen"):
@@ -423,9 +429,8 @@ def verificar_ausentes(merged: dict, ids_hoy: set, now_iso: str) -> list:
             log(f"   💰 VENDIDO {v.get('title','')[:40]} · {v.get('price')} € "
                 f"(última vez visto {v.get('last_seen','')[:10]})")
             merged.pop(v.get("id"), None)
-        elif estado == "200" and "Ups! Parece" not in cuerpo:
-            if str(v.get("id")) in cuerpo or len(cuerpo) > 2000:
-                v["verificado"] = hoy          # sigue vivo: no re-verificar en 2 días
+        elif estado == "200" and vivo and "Ups! Parece" not in cuerpo:
+            v["verificado"] = hoy              # confirmado vivo: no re-verificar en 2 días
         time.sleep(2.5)
     return vendidos
 
