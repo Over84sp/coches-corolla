@@ -112,6 +112,7 @@
 <nav class="anclas">
   <a href="#" id="btnRefrescar" title="Recargar con los últimos datos">🔄 Actualizar</a>
   <a href="#novedadesSec">🆕 Novedades</a>
+  <a href="#vendidosSec">💰 Vendidos</a>
   <a href="#cmpSec">⚔️ Comparador</a>
   <a href="#rankSec">🏆 Ranking</a>
   <a href="#chartsGrid">📊 Gráficos</a>
@@ -147,6 +148,8 @@
 <div class="rankwrap card" id="novedadesSec" style="padding-bottom:14px"></div>
 
 <div class="rankwrap card" id="rebajasSec" style="padding-bottom:14px"></div>
+
+<div class="rankwrap card" id="vendidosSec" style="padding-bottom:14px"></div>
 
 <div class="rankwrap card" id="cmpSec" style="padding-bottom:14px">
   <h3>⚔️ Comparador <span class="tag" style="margin-left:4px">dos coches · o vs mejor rival</span></h3>
@@ -659,6 +662,35 @@ function rebajasSec(){
       `<b style="color:var(--warn);margin-left:auto">📉 −${fmtE(r.dif)}</b></div>`;
   });
   html+=`<p class=mini style="margin:8px 0 0">Pulsa el código T para saltar al coche en la tabla. Rebaja = vendedor que suele negociar.</p>`;
+  box.innerHTML=html;
+}
+
+/* ─── vendidos verificados ─── */
+function vendidosSec(){
+  const box=document.getElementById('vendidosSec');
+  const todas=DATA.vendidos||[];
+  const pasa=v=>(!F.modelo.size||F.modelo.has(v.modelo))&&(!F.trim.size||F.trim.has(trimDe(v.titulo||'x')));
+  const V=todas.filter(pasa).reverse().slice(0,20);
+  const hace30=new Date(Date.now()-30*864e5).toISOString().slice(0,10);
+  const mes=todas.filter(v=>v.confirmado>=hace30);
+  let html=`<h3>💰 Vendidos <span class=tag>${mes.length} en 30 días · verificados uno a uno</span></h3>`;
+  if(!V.length){
+    html+=`<p class=mini style="margin:0 0 6px">Todavía sin ventas confirmadas. Cuando un anuncio desaparece (2+ días sin verse), se comprueba su URL: si coches.net lo ha retirado, el coche pasa aquí con su último precio.</p>`;
+    box.innerHTML=html;return;
+  }
+  V.forEach(v=>{
+    html+=`<div style="display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;padding:8px 0;border-top:1px solid #1d2740">`+
+      `<span class=mini style="color:var(--tx2)">vendido ~${v.confirmado.slice(5)}</span>`+
+      `${v.ref?`<b style="color:var(--tx2)">${v.ref}</b>`:''}<b style="color:${COLMOD[v.modelo]||'var(--tx)'}">${v.modelo}</b>`+
+      `<b>${fmtE(v.precio)}</b>`+
+      (v.dias!=null&&v.dias!==''?`<span class=mini>${v.dias} días en venta</span>`:'')+
+      `<span class=mini style="margin-left:auto">última vez visto ${v.fecha.slice(5)}</span></div>`;
+  });
+  if(mes.length>1){
+    const med=a=>{const x=a.filter(Number).sort((p,q)=>p-q);return x.length?x[x.length>>1]:null};
+    const mp=med(mes.map(v=>v.precio)), md=med(mes.map(v=>v.dias));
+    html+=`<p class=mini style="margin:8px 0 0">Mediana de venta (30 días): <b>${mp?fmtE(mp):'—'}</b>${md?` · mediana de días en venta: <b>${md}</b>`:''}</p>`;
+  }
   box.innerHTML=html;
 }
 
