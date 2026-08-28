@@ -365,6 +365,71 @@ def ai_comentarios(nuevos: list, now_iso: str):
     return {}
 
 
+def _curl_estado(url: str):
+    """GET sin seguir redirecciones. Devuelve (http_code, inicio_html)."""
+    exe = shutil.which("curl")
+    if not exe:
+        return "?", ""
+    try:
+        out = subprocess.run(
+            [exe, "-sS", "--compressed", "--max-time", "20",
+             "-w", "\n@@HTTP:%{http_code}", "-A", USER_AGENT,
+             "-H", "Accept-Language: es-ES,es;q=0.9", url],
+            capture_output=True, timeout=30).stdout
+        marker = out.rfind(b"\n@@HTTP:")
+        estado = out[marker + 8:].decode("ascii", "ignore").strip() if marker >= 0 else "0"
+        cuerpo = (out[:marker] if marker >= 0 else out).decode("utf-8", "ignore")
+        return estado, cuerpo[:4000]
+    except Exception:  # noqa: BLE001
+        return "0", ""
+
+
+def verificar_ausentes(merged: dict, ids_hoy: set, now_iso: str) -> list:
+    """Anuncios 2+ días sin aparecer en el listado: se comprueba su URL.
+    302/404 = anuncio retirado → VENDIDO (se elimina del estado).
+    200 con el id = sigue a la venta (solo rotó de página) → se anota 'verificado'."""
+    hoy = now_iso[:10]
+    corte = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=2)).strftime("%Y-%m-%d")
+    cand = [v for v in merged.values()
+            if v.get("id") not in ids_hoy
+            and v.get("url")
+            and (v.get("last_seen") or "") <= corte
+            and (v.get("verificado") or "") <= corte
+            and state_passes_filters(v)]
+    cand.sort(key=lambda v: v.get("last_seen") or "")
+    cand = cand[:12]
+    if not cand:
+        return []
+    log(f"→ Verificando {len(cand)} anuncios ausentes (+2 días sin ver)…")
+    primer_dia = {}
+    if CSV_FILE.exists():
+        for row in csv.DictReader(CSV_FILE.open(encoding="utf-8")):
+            primer_dia[row.get("id")] = (row.get("first_seen") or "")[:10]
+    vendidos = []
+    for v in cand:
+        estado, cuerpo = _curl_estado(v["url"])
+        if estado in ("301", "302", "303", "307", "308", "404"):
+            dias = ""
+            f0 = primer_dia.get(v.get("id"), "")
+            if f0 and v.get("last_seen"):
+                try:
+                    dias = (dt.datetime.strptime(v["last_seen"][:10], "%Y-%m-%d")
+                            - dt.datetime.strptime(f0, "%Y-%m-%d")).days
+                except ValueError:
+                    pass
+            vendidos.append({"fecha": v.get("last_seen", "")[:10], "confirmado": hoy,
+                             "id": v.get("id"), "modelo": version_de(v.get("title", ""), v.get("hp")),
+                             "precio": v.get("price") or 0, "dias": dias})
+            log(f"   💰 VENDIDO {v.get('title','')[:40]} · {v.get('price')} € "
+                f"(última vez visto {v.get('last_seen','')[:10]})")
+            merged.pop(v.get("id"), None)
+        elif estado == "200" and "Ups! Parece" not in cuerpo:
+            if str(v.get("id")) in cuerpo or len(cuerpo) > 2000:
+                v["verificado"] = hoy          # sigue vivo: no re-verificar en 2 días
+        time.sleep(2.5)
+    return vendidos
+
+
 def version_de(titulo: str, hp) -> str:
     """Modelo del Corolla TS: 140H / 180H / 200H (por título, fallback por CV)."""
     t = (titulo or "").upper()
@@ -547,55 +612,35 @@ def write_site(inv_groups, inv_ads_count, new_group_ids, drop_group_ids, now_iso
     historico_modelos = [{"fecha": f[0], "modelo": f[1], "n": f[2],
                           "minimo": f[3], "mediano": f[4], "medio": f[5]} for f in filas_mod]
 
-    # ── salidas estimadas: anuncios no vistos en 4+ días (vendidos o retirados) ──
-    salidas_file = STATE_DIR / "salidas.csv"
-    ya_salidas, salidas_todas = set(), []
-    if salidas_file.exists():
-        for row in csv.DictReader(salidas_file.open(encoding="utf-8")):
-            ya_salidas.add(row.get("id"))
+    # ── vendidos verificados (+ legado de salidas.csv sin verificar) ──
+    vendidos_todos = []
+    ven_file = STATE_DIR / "vendidos.csv"
+    if ven_file.exists():
+        for row in csv.DictReader(ven_file.open(encoding="utf-8")):
             try:
-                salidas_todas.append({"fecha": row["fecha_salida"], "modelo": row["modelo"],
-                                      "precio": int(row["precio"] or 0),
-                                      "dias": int(row["dias_en_venta"] or 0)})
+                vendidos_todos.append({
+                    "fecha": (row.get("fecha") or "")[:10],
+                    "confirmado": (row.get("confirmado") or row.get("fecha") or "")[:10],
+                    "id": row.get("id"), "ref": refs.get(row.get("id"), ""),
+                    "modelo": row.get("modelo") or "",
+                    "titulo": (row.get("titulo") or ""),
+                    "precio": int(row["precio"] or 0),
+                    "dias": int(row["dias"] or 0) if row.get("dias") else None})
             except (KeyError, ValueError):
                 pass
-    primer_dia = {}
-    if CSV_FILE.exists():
-        for row in csv.DictReader(CSV_FILE.open(encoding="utf-8")):
-            primer_dia[row.get("id")] = (row.get("first_seen") or "")[:10]
-    ids_hoy = {c["id"] for c in inventario}
-    corte = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=4)).strftime("%Y-%m-%d")
-    nuevas_salidas = []
-    for v in merged.values():
-        fid = str(v.get("id") or "")
-        if fid in ids_hoy or fid in ya_salidas:
-            continue
-        ultimo = (v.get("last_seen") or "")[:10]
-        if not (ultimo and ultimo <= corte):
-            continue
-        dias = ""
-        f0 = primer_dia.get(fid, "")
-        if f0:
+    salidas_file = STATE_DIR / "salidas.csv"
+    if salidas_file.exists() and not ven_file.exists():
+        for row in csv.DictReader(salidas_file.open(encoding="utf-8")):
             try:
-                dias = (dt.datetime.strptime(ultimo, "%Y-%m-%d")
-                        - dt.datetime.strptime(f0, "%Y-%m-%d")).days
-            except ValueError:
+                vendidos_todos.append({
+                    "fecha": row["fecha_salida"], "confirmado": row["fecha_salida"],
+                    "id": row.get("id"), "ref": refs.get(row.get("id"), ""),
+                    "modelo": row["modelo"], "titulo": "",
+                    "precio": int(row["precio"] or 0),
+                    "dias": int(row["dias_en_venta"] or 0) if row.get("dias_en_venta") else None})
+            except (KeyError, ValueError):
                 pass
-        nuevas_salidas.append([ultimo, fid, version_de(v.get("title", ""), v.get("hp")),
-                               v.get("price") or "", dias])
-    if nuevas_salidas:
-        sin_cabecera = not salidas_file.exists()
-        with salidas_file.open("a", newline="", encoding="utf-8") as fh:
-            w = csv.writer(fh)
-            if sin_cabecera:
-                w.writerow(["fecha_salida", "id", "modelo", "precio", "dias_en_venta"])
-            w.writerows(nuevas_salidas)
-        for f in nuevas_salidas:
-            try:
-                salidas_todas.append({"fecha": f[0], "modelo": f[2],
-                                      "precio": int(f[3] or 0), "dias": int(f[4] or 0)})
-            except ValueError:
-                pass
+    salidas_todas = vendidos_todos
 
     # ── objetivos de compra (percentil 10 automático si no hay valor fijo) ──
     def _pct(precios, p):
@@ -644,7 +689,8 @@ def write_site(inv_groups, inv_ads_count, new_group_ids, drop_group_ids, now_iso
              "comentariosIA": comentarios, "novedades": nuevos,
              "estado": estado, "ejecuciones": ejecuciones[-30:],
              "historicoModelos": historico_modelos, "salidas": salidas_todas,
-             "objetivos": objetivos, "rebajas": rebajas_recientes}
+             "objetivos": objetivos, "rebajas": rebajas_recientes,
+             "vendidos": vendidos_todos[-60:]}
     html = plantilla.read_text(encoding="utf-8").replace(
         "/*DATOS*/null", json.dumps(datos, ensure_ascii=False))
     (site_dir / "index.html").write_text(html, encoding="utf-8")
@@ -748,6 +794,23 @@ def main() -> int:
                 if a["id"] in prior_prices and prior_prices[a["id"]] is not None]
         if olds and g[0]["price"] is not None and g[0]["price"] < min(olds):
             drop_groups.append((g, min(olds)))
+
+    # ── verificar ausentes y registrar vendidos ──
+    vendidos_hoy = []
+    try:
+        vendidos_hoy = verificar_ausentes(merged, {a["id"] for a in matched}, now_iso)
+        if vendidos_hoy:
+            ven_file = STATE_DIR / "vendidos.csv"
+            sin_cab = not ven_file.exists()
+            with ven_file.open("a", newline="", encoding="utf-8") as fh:
+                w = csv.writer(fh)
+                if sin_cab:
+                    w.writerow(["fecha", "confirmado", "id", "modelo", "precio", "dias"])
+                for vd in vendidos_hoy:
+                    w.writerow([vd["fecha"], vd["confirmado"], vd["id"],
+                                vd["modelo"], vd["precio"], vd["dias"]])
+    except Exception as exc:  # noqa: BLE001
+        log(f"⚠ Verificación de ausentes falló: {str(exc)[:90]}")
 
     save_state(merged, new_ads)
 
