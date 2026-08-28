@@ -1143,7 +1143,7 @@
   "id": "71191386",
   "published": "2026-07-30",
   "title": "TOYOTA Corolla 140H Active Plus Touring Sport",
-  "price": 26890,
+  "price": 26880,
   "year": 2025,
   "km": 16500,
   "hp": 140,
@@ -1818,6 +1818,26 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/2026/08/28/71386247/2126550813_g.jpg",
   "url": "https://www.coches.net/toyota-corolla-140h-style-touring-sport-5p-electrico-hibrido-2024-en-asturias-71386247-covo.aspx",
+  "last_seen": "2026-08-28"
+ },
+ "71075134": {
+  "id": "71075134",
+  "published": "2026-07-14",
+  "title": "TOYOTA Corolla 200H Style Touring Sport",
+  "price": 27990,
+  "year": 2023,
+  "km": 51467,
+  "hp": 196,
+  "fuel": "Híbrido",
+  "label": "ECO",
+  "province": "Madrid",
+  "city": "Coslada",
+  "seller_type": "Profesional",
+  "seller_name": "Flexicar Coslada",
+  "seller_rating": "",
+  "tipo": "Ocasión",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20424902/1798dbc1-2803-4972-b2e1-8ea6630db876.jpg",
+  "url": "https://www.coches.net/toyota-corolla-200h-style-touring-sport-5p-electrico-hibrido-2023-en-madrid-71075134-covo.aspx",
   "last_seen": "2026-08-28"
  }
 }
