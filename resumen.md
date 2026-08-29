@@ -1,14 +1,14 @@
-# Corolla TS ≥2022 · ≥140 CV — 2026-08-29 12:45 UTC
+# Corolla TS ≥2022 · ≥140 CV — 2026-08-29 21:02 UTC
 Descargados: **171** · Tras filtros: **73** anuncios · Nuevos: **2** coches (2 anuncios) · Rebajas: **0**
 
 ## 🆕 Nuevos (2 coches)
 
 | Precio | Año | km | CV | Lugar | Tipo | Título |
 |---:|---:|---:|---:|---|---|---|
-| 27,490 € | 2024 | 31,741 | 140 | Vila-real (Castellón) | Ocasión | [TOYOTA Corolla 140H Active Plus Touring Sport](https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2024-en-castellon-71081262-covo.aspx) |
-| 30,190 € | 2023 | 48,863 | 196 | Arganda del Rey (Madrid) | Ocasión | [TOYOTA Corolla 200H GRSport Touring Sport](https://www.coches.net/toyota-corolla-200h-grsport-touring-sport-5p-electrico-hibrido-2023-en-madrid-71084219-covo.aspx) |
+| 24,450 € | 2022 | 50,000 | 180 | Jerez de la Frontera (Cádiz) | Ocasión | [TOYOTA Corolla 2.0 180H ADVANCE ECVT TOURING SPORT](https://www.coches.net/toyota-corolla-20-180h-advance-ecvt-touring-sport-5p-electrico-hibrido-2022-en-cadiz-71390806-covo.aspx) |
+| 27,290 € | 2022 | 79,000 | 196 | Vic (Barcelona) | Ocasión | [TOYOTA Corolla 200H GRSport Touring Sport](https://www.coches.net/toyota-corolla-200h-grsport-touring-sport-5p-electrico-hibrido-2023-en-barcelona-71087877-covo.aspx) |
 
-## 🚗 Inventario completo (83 coches · 95 anuncios)
+## 🚗 Inventario completo (85 coches · 97 anuncios)
 
 | | Precio | Año | km | CV | Lugar | Tipo | Visto | Título |
 |---|---:|---:|---:|---:|---|---|---|---|
@@ -34,6 +34,7 @@ Descargados: **171** · Tras filtros: **73** anuncios · Nuevos: **2** coches (2
 |  | 23,900 € | 2023 | 100,329 | 140 | Murcia (Murcia) | Ocasión | 2026-08-29 | [TOYOTA Corolla 140H Style Touring Sport](https://www.coches.net/toyota-corolla-140h-style-touring-sport-5p-electrico-hibrido-2023-en-murcia-71383552-covo.aspx) |
 |  | 23,990 € | 2022 | 112,889 | 180 | Torrejón de Ardoz (Madrid) | Ocasión | 2026-08-29 | [TOYOTA Corolla 2.0 180H STYLE ECVT TOURING SPORT](https://www.coches.net/toyota-corolla-20-180h-style-ecvt-touring-sport-5p-electrico-hibrido-2022-en-madrid-70872887-covo.aspx) |
 |  | 24,099 € | 2022 | 97,017 | 180 | (Sevilla) | Ocasión | 2026-08-29 | [TOYOTA Corolla 2.0 180H STYLE ECVT TOURING SPORT](https://www.coches.net/toyota-corolla-20-180h-style-ecvt-touring-sport-5p-electrico-hibrido-2022-en-sevilla-71386598-covo.aspx) |
+| 🆕 | 24,450 € | 2022 | 50,000 | 180 | Jerez de la Frontera (Cádiz) | Ocasión | 2026-08-29 | [TOYOTA Corolla 2.0 180H ADVANCE ECVT TOURING SPORT](https://www.coches.net/toyota-corolla-20-180h-advance-ecvt-touring-sport-5p-electrico-hibrido-2022-en-cadiz-71390806-covo.aspx) |
 |  | 24,490 € | 2023 | 75,098 | 140 | Terrassa (Barcelona) | Ocasión | 2026-08-29 | [TOYOTA Corolla 140H Active Plus Touring Sport](https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2023-en-barcelona-71117052-covo.aspx) |
 |  | 24,500 € | 2022 | 91,070 | 180 | Girona Capital (Girona) | Ocasión | 2026-08-29 | [TOYOTA Corolla 2.0 180H GRSPORT ECVT TOURING SPORT](https://www.coches.net/toyota-corolla-20-180h-grsport-ecvt-touring-sport-5p-electrico-hibrido-2022-en-girona-71332601-covo.aspx) |
 |  | 25,490 € | 2023 | 72,125 | 140 | Madrid Capital (Madrid) | Ocasión | 2026-08-29 | [TOYOTA Corolla 140H Style Touring Sport](https://www.coches.net/toyota-corolla-140h-style-touring-sport-5p-electrico-hibrido-2023-en-madrid-71351651-covo.aspx) |
@@ -46,13 +47,14 @@ Descargados: **171** · Tras filtros: **73** anuncios · Nuevos: **2** coches (2
 |  | 26,200 € | 2022 | 31,750 | 180 | Terrassa (Barcelona) | Ocasión | 2026-08-29 | [TOYOTA Corolla 2.0 180H STYLE ECVT TOURING SPORT](https://www.coches.net/toyota-corolla-20-180h-style-ecvt-touring-sport-5p-electrico-hibrido-2022-en-barcelona-70656258-covo.aspx) |
 |  ×2 | 26,399 € | 2024 | 28,459 | 140 | (Sevilla) / Madrid Capital (Madrid) | Ocasión | 2026-08-29 | [TOYOTA Corolla 140H Style Touring Sport](https://www.coches.net/toyota-corolla-140h-style-touring-sport-5p-electrico-hibrido-2024-en-sevilla-71374659-covo.aspx) · [2ª](https://www.coches.net/toyota-corolla-140h-style-touring-sport-5p-electrico-hibrido-2024-en-madrid-71374062-covo.aspx) |
 |  | 26,799 € | 2022 | 97,484 | 180 | Madrid Capital (Madrid) | Ocasión | 2026-08-28 | [TOYOTA Corolla 2.0 180H GRSPORT ECVT TOURING SPORT](https://www.coches.net/toyota-corolla-20-180h-grsport-ecvt-touring-sport-5p-electrico-hibrido-2022-en-madrid-71267357-covo.aspx) |
-|  | 26,880 € | 2025 | 16,500 | 140 | Torrent (Valencia) | Ocasión | 2026-08-28 | [TOYOTA Corolla 140H Active Plus Touring Sport](https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2024-en-valencia-71191386-covo.aspx) |
+|  | 26,880 € | 2025 | 16,500 | 140 | Torrent (Valencia) | Ocasión | 2026-08-29 | [TOYOTA Corolla 140H Active Plus Touring Sport](https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2024-en-valencia-71191386-covo.aspx) |
 |  | 26,900 € | 2022 | 30,700 | 180 | Zaratán (Valladolid) | Ocasión | 2026-08-24 | [TOYOTA Corolla 2.0 180H STYLE ECVT TOURING SPORT](https://www.coches.net/toyota-corolla-20-180h-style-ecvt-touring-sport-5p-electrico-hibrido-2022-en-valladolid-71262383-covo.aspx) |
 |  | 26,900 € | 2025 | 8,800 | 140 | Ciudad Real (Ciudad Real) | Ocasión | 2026-08-29 | [TOYOTA Corolla 140H Active Plus Touring Sport](https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2023-en-ciudad-real-71381990-covo.aspx) |
 |  | 26,990 € | 2022 | 64,848 | 180 | Terrassa (Barcelona) | Ocasión | 2026-08-29 | [TOYOTA Corolla 2.0 180H GRSPORT ECVT TOURING SPORT](https://www.coches.net/toyota-corolla-20-180h-grsport-ecvt-touring-sport-5p-electrico-hibrido-2022-en-barcelona-71350599-covo.aspx) |
 |  ×2 | 27,000 € | 2026 | 2,243 | 140 | Madrid Capital (Madrid) | Km0/Demo | 2026-08-29 | [TOYOTA Corolla 140H Active Plus Touring Sport](https://www.coches.net/km-0/toyota/corolla/madrid/140h-active-plus-touring-sport-electrico-hibrido-de-km0-71294990-kovn.aspx) · [2ª](https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2025-en-madrid-71284449-covo.aspx) |
+| 🆕 | 27,290 € | 2022 | 79,000 | 196 | Vic (Barcelona) | Ocasión | 2026-08-29 | [TOYOTA Corolla 200H GRSport Touring Sport](https://www.coches.net/toyota-corolla-200h-grsport-touring-sport-5p-electrico-hibrido-2023-en-barcelona-71087877-covo.aspx) |
 |  | 27,300 € | 2022 | 82,626 | 180 | Manresa (Barcelona) | Ocasión | 2026-08-28 | [TOYOTA Corolla 2.0 180H GRSPORT ECVT TOURING SPORT](https://www.coches.net/toyota-corolla-20-180h-grsport-ecvt-touring-sport-5p-electrico-hibrido-2022-en-barcelona-71094495-covo.aspx) |
-| 🆕 | 27,490 € | 2024 | 31,741 | 140 | Vila-real (Castellón) | Ocasión | 2026-08-29 | [TOYOTA Corolla 140H Active Plus Touring Sport](https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2024-en-castellon-71081262-covo.aspx) |
+|  | 27,490 € | 2024 | 31,741 | 140 | Vila-real (Castellón) | Ocasión | 2026-08-29 | [TOYOTA Corolla 140H Active Plus Touring Sport](https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2024-en-castellon-71081262-covo.aspx) |
 |  | 27,500 € | 2025 | 9,021 | 140 | Salamanca (Salamanca) | Ocasión | 2026-08-29 | [TOYOTA Corolla 140H Active Plus Touring Sport](https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2025-en-salamanca-71325480-covo.aspx) |
 |  | 27,600 € | 2025 | 9,500 | 140 | Barcelona Capital (Barcelona) | Ocasión | 2026-08-29 | [TOYOTA Corolla 140H Active Plus Touring Sport](https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2025-en-barcelona-62113803-covo.aspx) |
 |  | 27,900 € | 2025 | 9,716 | 140 | Santovenia de la Valdoncina (León) | Ocasión | 2026-08-29 | [TOYOTA Corolla 140H Active Plus Touring Sport](https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2024-en-leon-71343559-covo.aspx) |
@@ -78,7 +80,7 @@ Descargados: **171** · Tras filtros: **73** anuncios · Nuevos: **2** coches (2
 |  | 29,990 € | 2024 | 41,409 | 196 | Zaragoza Capital (Zaragoza) | Ocasión | 2026-08-28 | [TOYOTA Corolla 200H GRSport Touring Sport](https://www.coches.net/toyota-corolla-200h-grsport-touring-sport-5p-electrico-hibrido-2024-en-zaragoza-71270282-covo.aspx) |
 |  | 29,990 € | 2026 | 5 | 140 | Alcobendas (Madrid) | Ocasión | 2026-08-29 | [TOYOTA Corolla 140H Style Touring Sport](https://www.coches.net/toyota-corolla-140h-style-touring-sport-5p-electrico-hibrido-2025-en-madrid-71382248-covo.aspx) |
 |  | 29,995 € | 2024 | 34,842 | 140 | Valencia (Valencia) | Ocasión | 2026-08-29 | [TOYOTA Corolla 140H Style Touring Sport](https://www.coches.net/toyota-corolla-140h-style-touring-sport-5p-electrico-hibrido-2024-en-valencia-71105274-covo.aspx) |
-| 🆕 | 30,190 € | 2023 | 48,863 | 196 | Arganda del Rey (Madrid) | Ocasión | 2026-08-29 | [TOYOTA Corolla 200H GRSport Touring Sport](https://www.coches.net/toyota-corolla-200h-grsport-touring-sport-5p-electrico-hibrido-2023-en-madrid-71084219-covo.aspx) |
+|  | 30,190 € | 2023 | 48,863 | 196 | Arganda del Rey (Madrid) | Ocasión | 2026-08-29 | [TOYOTA Corolla 200H GRSport Touring Sport](https://www.coches.net/toyota-corolla-200h-grsport-touring-sport-5p-electrico-hibrido-2023-en-madrid-71084219-covo.aspx) |
 |  | 30,500 € | 2026 | 10,000 | 178 | Leganés (Madrid) | Ocasión | 2026-08-29 | [TOYOTA Corolla 200H Style Touring Sport](https://www.coches.net/toyota-corolla-200h-style-touring-sport-5p-electrico-hibrido-2025-en-madrid-71228610-covo.aspx) |
 |  | 30,990 € | 2025 | 19,160 | 196 | Igualada (Barcelona) | Ocasión | 2026-08-28 | [TOYOTA Corolla 200H Style Touring Sport](https://www.coches.net/toyota-corolla-200h-style-touring-sport-5p-electrico-hibrido-2024-en-barcelona-71146672-covo.aspx) |
 |  | 31,250 € | 2025 | 11,292 | 178 | Valencia (Valencia) | Ocasión | 2026-08-29 | [TOYOTA Corolla 200H Style Touring Sport](https://www.coches.net/toyota-corolla-200h-style-touring-sport-5p-electrico-hibrido-2025-en-valencia-70625414-covo.aspx) |
@@ -87,7 +89,7 @@ Descargados: **171** · Tras filtros: **73** anuncios · Nuevos: **2** coches (2
 |  | 31,500 € | 2026 | 10,000 | 140 | Teo (A Coruña) | Km0/Demo | 2026-08-29 | [TOYOTA Corolla 140H Style Edition Touring Sport](https://www.coches.net/km-0/toyota/corolla/a-coruna/140h-style-edition-touring-sport-electrico-hibrido-de-gerencia-71362707-gevn.aspx) |
 |  | 31,900 € | 2025 | 10,171 | 196 | Santovenia de la Valdoncina (León) | Ocasión | 2026-08-29 | [TOYOTA Corolla 200H Style Touring Sport](https://www.coches.net/toyota-corolla-200h-style-touring-sport-5p-electrico-hibrido-2024-en-leon-71343785-covo.aspx) |
 |  | 32,650 € | 2025 | 4,077 | 196 | Madrid Capital (Madrid) | Km0/Demo | 2026-08-29 | [TOYOTA Corolla 200H Style EditionTouring Sport](https://www.coches.net/km-0/toyota/corolla/madrid/200h-style-editiontouring-sport-electrico-hibrido-de-km0-71272020-kovn.aspx) |
-|  | 32,900 € | 2025 | 2 | 178 | Murcia (Murcia) | Ocasión | 2026-08-28 | [TOYOTA Corolla 200H Style EditionTouring Sport](https://www.coches.net/toyota-corolla-200h-style-editiontouring-sport-5p-electrico-hibrido-2025-en-murcia-62500711-covo.aspx) |
+|  | 32,900 € | 2025 | 2 | 178 | Murcia (Murcia) | Ocasión | 2026-08-29 | [TOYOTA Corolla 200H Style EditionTouring Sport](https://www.coches.net/toyota-corolla-200h-style-editiontouring-sport-5p-electrico-hibrido-2025-en-murcia-62500711-covo.aspx) |
 |  | 32,990 € | 2025 | 7,250 | 140 | Leioa (Vizcaya) | Ocasión | 2026-08-29 | [TOYOTA Corolla 140H Style Edition Touring Sport](https://www.coches.net/toyota-corolla-140h-style-edition-touring-sport-5p-electrico-hibrido-2023-en-vizcaya-71375169-covo.aspx) |
 |  | 33,700 € | 2025 | 8,900 | 196 | Leganés (Madrid) | Ocasión | 2026-08-29 | [TOYOTA Corolla 200H Style EditionTouring Sport](https://www.coches.net/toyota-corolla-200h-style-editiontouring-sport-5p-electrico-hibrido-2024-en-madrid-70058302-covo.aspx) |
 |  | 33,900 € | 2026 | 8,000 | 178 | Leganés (Madrid) | Ocasión | 2026-08-29 | [TOYOTA Corolla 200H GRSport Touring Sport](https://www.coches.net/toyota-corolla-200h-grsport-touring-sport-5p-electrico-hibrido-2025-en-madrid-71315401-covo.aspx) |

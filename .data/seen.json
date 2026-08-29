@@ -1157,7 +1157,7 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20528404/c1772684-fcb0-4930-95dc-feaf29859e68.jpg",
   "url": "https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2024-en-valencia-71191386-covo.aspx",
-  "last_seen": "2026-08-28"
+  "last_seen": "2026-08-29"
  },
  "71270925": {
   "id": "71270925",
@@ -1217,7 +1217,7 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/19363960/b0093be4-d248-43aa-9563-a6e7c298884b.jpg",
   "url": "https://www.coches.net/toyota-corolla-200h-style-editiontouring-sport-5p-electrico-hibrido-2025-en-murcia-62500711-covo.aspx",
-  "last_seen": "2026-08-28"
+  "last_seen": "2026-08-29"
  },
  "71270282": {
   "id": "71270282",
@@ -1898,6 +1898,46 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20382659/f0170e5d-b48d-4c6f-8c4c-1326b9a9323a.jpg",
   "url": "https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2024-en-castellon-71081262-covo.aspx",
+  "last_seen": "2026-08-29"
+ },
+ "71390806": {
+  "id": "71390806",
+  "published": "2026-08-29",
+  "title": "TOYOTA Corolla 2.0 180H ADVANCE ECVT TOURING SPORT",
+  "price": 24450,
+  "year": 2022,
+  "km": 50000,
+  "hp": 180,
+  "fuel": "Híbrido",
+  "label": "ECO",
+  "province": "Cádiz",
+  "city": "Jerez de la Frontera",
+  "seller_type": "Particular",
+  "seller_name": "",
+  "seller_rating": "",
+  "tipo": "Ocasión",
+  "foto": "https://a.ccdn.es/cnet/2026/08/29/71390806/2126678192_g.jpg",
+  "url": "https://www.coches.net/toyota-corolla-20-180h-advance-ecvt-touring-sport-5p-electrico-hibrido-2022-en-cadiz-71390806-covo.aspx",
+  "last_seen": "2026-08-29"
+ },
+ "71087877": {
+  "id": "71087877",
+  "published": "2026-07-15",
+  "title": "TOYOTA Corolla 200H GRSport Touring Sport",
+  "price": 27290,
+  "year": 2022,
+  "km": 79000,
+  "hp": 196,
+  "fuel": "Híbrido",
+  "label": "ECO",
+  "province": "Barcelona",
+  "city": "Vic",
+  "seller_type": "Profesional",
+  "seller_name": "Flexicar Vic",
+  "seller_rating": "",
+  "tipo": "Ocasión",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20419369/f79c41d9-f947-49a5-85da-55bfafc8e5d9.jpg",
+  "url": "https://www.coches.net/toyota-corolla-200h-grsport-touring-sport-5p-electrico-hibrido-2023-en-barcelona-71087877-covo.aspx",
   "last_seen": "2026-08-29"
  }
 }
