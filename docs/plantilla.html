@@ -143,6 +143,7 @@
   <div class="card"><h3>Depreciación por año de matrícula 🕰️</h3><div id="c8"></div></div>
   <div class="card"><h3>🎯 Objetivos de compra</h3><div id="c9"></div></div>
   <div class="card"><h3>Velocidad de mercado (vendidos) ⏱️</h3><div id="c10"></div></div>
+  <div class="card"><h3>💰 Ventas confirmadas por modelo</h3><div id="c12"></div></div>
 </div>
 
 <div class="rankwrap card" id="novedadesSec" style="padding-bottom:14px"></div>
@@ -666,6 +667,36 @@ function rebajasSec(){
   box.innerHTML=html;
 }
 
+/* ─── c12: ventas por modelo (30 días) ─── */
+function c12(){
+  const box=document.getElementById('c12');
+  const todas=DATA.vendidos||[];
+  const hace30=new Date(Date.now()-30*864e5).toISOString().slice(0,10);
+  const pasa=v=>(!F.modelo.size||F.modelo.has(v.modelo))&&(!F.trim.size||F.trim.has(trimDe(v.titulo||'x')));
+  const R=todas.filter(v=>v.confirmado>=hace30).filter(pasa);
+  if(!R.length){
+    box.innerHTML=`<p class=mini>sin ventas confirmadas en 30 días${F.modelo.size||F.trim.size?' con estos filtros':''} — cuando se confirme una, aparecerá aquí</p>`;return}
+  const med=a=>{const x=a.filter(Number).sort((p,q)=>p-q);return x.length?x[x.length>>1]:null};
+  const porMod={};
+  R.forEach(v=>(porMod[v.modelo]=porMod[v.modelo]||[]).push(v));
+  const filas=Object.entries(porMod).map(([m,vs])=>({m,n:vs.length,med:med(vs.map(v=>v.precio))}))
+    .sort((a,b)=>b.n-a.n);
+  const mx=Math.max(...filas.map(f=>f.n));
+  let html=`<p class=mini style="margin:2px 0 8px">Ventas confirmadas últimos 30 días (total ${R.length})</p>`;
+  filas.forEach(f=>{
+    const col=COLMOD[f.m]||'#9aa7bd';
+    const w=Math.max(26,Math.round((f.n/mx)*Math.max(120,(box.clientWidth||360)-210)));
+    html+=`<div class=hrow title="${f.m}: ${f.n} venta${f.n>1?'s':''} confirmada${f.n>1?'s':''}${f.med?` · mediana ${fmtE(f.med)}`:''}">`+
+      `<span class=hlab style="color:${col};font-weight:700">${f.m}</span>`+
+      `<div style="height:18px;border-radius:5px;background:${col};width:${w}px;opacity:.9;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:12px;font-weight:700;color:#04101e">${f.n}</div>`+
+      (f.med?`<span class=mini>mediana ${fmtE(f.med)}</span>`:'')+
+      `</div>`;
+  });
+  const mp=med(R.map(v=>v.precio)), md=med(R.map(v=>v.dias));
+  html+=`<p class=mini style="margin:8px 0 0">Mediana global: <b>${mp?fmtE(mp):'—'}</b>${md?` · <b>${md}</b> días en venta de media</b>`:''} · detalle en la sección 💰 Vendidos</p>`;
+  box.innerHTML=html;
+}
+
 /* ─── vendidos verificados ─── */
 function vendidosSec(){
   const box=document.getElementById('vendidosSec');
@@ -914,7 +945,7 @@ function refresco(){
   const seguro=(fn,arg)=>{try{fn(arg)}catch(e){console.error(fn.name,e)}};
   [kpis,c1,c11,c2,c3,c4,c5,c6,c7].forEach(f=>seguro(f,I));
   [c8,c9,rankingSec,tabla].forEach(f=>seguro(f,I));
-  [c10,novedadesSec,rebajasSec,vendidosSec,estadoSec].forEach(f=>seguro(f));
+  [c10,c12,novedadesSec,rebajasSec,vendidosSec,estadoSec].forEach(f=>seguro(f));
 }
 
 /* ─── arranque ─── */
