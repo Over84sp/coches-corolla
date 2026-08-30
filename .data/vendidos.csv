@@ -1,8 +1,7 @@
-fecha,confirmado,id,modelo,precio,dias
-2026-08-23,2026-08-28,71208698,140H,21990,0
-2026-08-23,2026-08-28,71261046,140H,26399,0
-2026-08-25,2026-08-28,71283626,180H,23900,2
-2026-08-25,2026-08-28,71214208,200H,31490,2
-2026-08-25,2026-08-28,71278920,140H,27490,2
-2026-08-26,2026-08-28,71108893,180H,19650,3
-2026-08-26,2026-08-28,70656697,140H,32990,1
+fecha,confirmado,id,modelo,titulo,url,precio,km,dias
+2026-08-23,2026-08-28,71261046,140H,TOYOTA Corolla 140H Style Touring Sport,https://www.coches.net/toyota-corolla-140h-style-touring-sport-5p-electrico-hibrido-2024-en-madrid-71261046-covo.aspx,26399,28459,0
+2026-08-25,2026-08-28,71283626,180H,TOYOTA Corolla 2.0 180H STYLE ECVT TOURING S,https://www.coches.net/toyota-corolla-20-180h-style-ecvt-touring-sport-5p-electrico-hibrido-2022-en-barcelona-71283626-covo.aspx,23900,71779,2
+2026-08-25,2026-08-28,71214208,200H,TOYOTA Corolla 200H Style Touring Sport,https://www.coches.net/km-0/toyota/corolla/barcelona/200h-style-touring-sport-electrico-hibrido-de-demostracion-71214208-devn.aspx,31490,23,2
+2026-08-25,2026-08-28,71278920,140H,TOYOTA Corolla 140H Style Touring Sport,https://www.coches.net/km-0/toyota/corolla/barcelona/140h-style-touring-sport-electrico-hibrido-de-km0-71278920-kovn.aspx,27490,2600,2
+2026-08-26,2026-08-28,71108893,180H,TOYOTA Corolla 2.0 180H STYLE ECVT TOURING S,https://www.coches.net/toyota-corolla-20-180h-style-ecvt-touring-sport-5p-electrico-hibrido-2022-en-madrid-71108893-covo.aspx,19650,128000,3
+2026-08-26,2026-08-28,70656697,140H,TOYOTA Corolla 140H Style Edition Touring Sp,https://www.coches.net/toyota-corolla-140h-style-edition-touring-sport-5p-electrico-hibrido-2023-en-vizcaya-70656697-covo.aspx,32990,7250,1

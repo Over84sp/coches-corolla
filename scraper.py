@@ -379,22 +379,23 @@ def _curl_estado(url: str):
         marker = out.rfind(b"\n@@HTTP:")
         estado = out[marker + 8:].decode("ascii", "ignore").strip() if marker >= 0 else "0"
         cuerpo = (out[:marker] if marker >= 0 else out).decode("utf-8", "ignore")
-        return estado, cuerpo[:25000]
+        return estado, cuerpo[:1400000]
     except Exception:  # noqa: BLE001
         return "0", ""
 
 
 def verificar_ausentes(merged: dict, ids_hoy: set, now_iso: str) -> list:
     """Anuncios 2+ días sin aparecer en el listado: se comprueba su URL.
-    302/404 = anuncio retirado → VENDIDO (se elimina del estado).
-    200 con el id = sigue a la venta (solo rotó de página) → se anota 'verificado'."""
+    DOBLE CONFIRMACIÓN: un 302 aislado puede ser un bloqueo anti-bot transitorio,
+    así que la 1ª señal solo marca 'sospechoso'; se declara VENDIDO cuando falla
+    de nuevo en una tirada distinta."""
     hoy = now_iso[:10]
     corte = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=2)).strftime("%Y-%m-%d")
     cand = [v for v in merged.values()
             if v.get("id") not in ids_hoy
             and v.get("url")
             and (v.get("last_seen") or "") <= corte
-            and (v.get("verificado") or "") <= corte
+            and (v.get("sospechoso") or (v.get("verificado") or "") <= corte)
             and state_passes_filters(v)]
     cand.sort(key=lambda v: v.get("last_seen") or "")
     cand = cand[:12]
@@ -410,28 +411,40 @@ def verificar_ausentes(merged: dict, ids_hoy: set, now_iso: str) -> list:
         estado, cuerpo = _curl_estado(v["url"])
         marcado_muerto = any(m in cuerpo for m in (
             '"AD_NOT_AVAILABLE":true', "anuncio no disponible",
-            "ya no está disponible", "este anuncio ya no"))
-        vivo = str(v.get("id")) in cuerpo
-        log(f"   · {v.get('title','')[:32]} → HTTP {estado}"
-            f" {'VENDIDO(retirado)' if estado in ('301','302','303','307','308','404') or marcado_muerto else ('vivo' if vivo else 'dudoso, reintento')}")
-        if estado in ("301", "302", "303", "307", "308", "404") or marcado_muerto:
-            dias = ""
-            f0 = primer_dia.get(v.get("id"), "")
-            if f0 and v.get("last_seen"):
-                try:
-                    dias = (dt.datetime.strptime(v["last_seen"][:10], "%Y-%m-%d")
-                            - dt.datetime.strptime(f0, "%Y-%m-%d")).days
-                except ValueError:
-                    pass
-            vendidos.append({"fecha": v.get("last_seen", "")[:10], "confirmado": hoy,
-                             "id": v.get("id"), "modelo": version_de(v.get("title", ""), v.get("hp")),
-                             "titulo": (v.get("title") or "")[:44], "url": v.get("url") or "",
-                             "precio": v.get("price") or 0, "dias": dias})
-            log(f"   💰 VENDIDO {v.get('title','')[:40]} · {v.get('price')} € "
-                f"(última vez visto {v.get('last_seen','')[:10]})")
-            merged.pop(v.get("id"), None)
-        elif estado == "200" and vivo and "Ups! Parece" not in cuerpo:
-            v["verificado"] = hoy              # confirmado vivo: no re-verificar en 2 días
+            "ya no está disponible", "este anuncio ya no está"))
+        vivo = (str(v.get("id")) in cuerpo
+                or (len(cuerpo) > 150000 and "Ups! Parece" not in cuerpo))
+        muerto = estado in ("301", "302", "303", "307", "308", "404") or marcado_muerto
+        etiqueta = ("VENDIDO(confirmado)" if muerto and v.get("sospechoso")
+                    else ("sospechoso (1ª señal)" if muerto
+                          else ("vivo" if vivo else "dudoso")))
+        log(f"   · {v.get('title','')[:32]} → HTTP {estado} {etiqueta}")
+        if not muerto:
+            v.pop("sospechoso", None)
+            if estado == "200" and vivo and "Ups! Parece" not in cuerpo:
+                v["verificado"] = hoy
+            time.sleep(2.5)
+            continue
+        if not v.get("sospechoso") or v["sospechoso"] >= hoy:
+            v["sospechoso"] = hoy
+            time.sleep(2.5)
+            continue
+        dias = ""
+        f0 = primer_dia.get(v.get("id"), "")
+        if f0 and v.get("last_seen"):
+            try:
+                dias = (dt.datetime.strptime(v["last_seen"][:10], "%Y-%m-%d")
+                        - dt.datetime.strptime(f0, "%Y-%m-%d")).days
+            except ValueError:
+                pass
+        vendidos.append({"fecha": v.get("last_seen", "")[:10], "confirmado": hoy,
+                         "id": v.get("id"), "modelo": version_de(v.get("title", ""), v.get("hp")),
+                         "titulo": (v.get("title") or "")[:44], "url": v.get("url") or "",
+                         "precio": v.get("price") or 0, "km": v.get("km") or "",
+                         "dias": dias})
+        log(f"   💰 VENDIDO {v.get('title','')[:40]} · {v.get('price')} € "
+            f"(última vez visto {v.get('last_seen','')[:10]})")
+        merged.pop(v.get("id"), None)
         time.sleep(2.5)
     return vendidos
 
@@ -619,17 +632,21 @@ def write_site(inv_groups, inv_ads_count, new_group_ids, drop_group_ids, now_iso
                           "minimo": f[3], "mediano": f[4], "medio": f[5]} for f in filas_mod]
 
     # ── vendidos verificados (+ legado de salidas.csv sin verificar) ──
-    hist_urls = {}
+    hist_urls, hist_kms = {}, {}
     if CSV_FILE.exists():
         for row in csv.DictReader(CSV_FILE.open(encoding="utf-8")):
             if row.get("id") and row.get("id") not in hist_urls:
                 hist_urls[row["id"]] = (row.get("url") or "", row.get("title") or "")
+                hist_kms[row["id"]] = row.get("km")
     vendidos_todos = []
     ven_file = STATE_DIR / "vendidos.csv"
     if ven_file.exists():
         for row in csv.DictReader(ven_file.open(encoding="utf-8")):
             try:
                 vid = row.get("id")
+                km_v = row.get("km")
+                if km_v in (None, ""):
+                    km_v = hist_kms.get(vid)
                 vendidos_todos.append({
                     "fecha": (row.get("fecha") or "")[:10],
                     "confirmado": (row.get("confirmado") or row.get("fecha") or "")[:10],
@@ -638,6 +655,7 @@ def write_site(inv_groups, inv_ads_count, new_group_ids, drop_group_ids, now_iso
                     "titulo": (row.get("titulo") or "") or hist_urls.get(vid, ("",))[1],
                     "url": row.get("url") or hist_urls.get(vid, ("",))[0],
                     "precio": int(row["precio"] or 0),
+                    "km": int(km_v) if str(km_v or "").isdigit() else None,
                     "dias": int(row["dias"] or 0) if row.get("dias") else None})
             except (KeyError, ValueError):
                 pass
@@ -703,7 +721,7 @@ def write_site(inv_groups, inv_ads_count, new_group_ids, drop_group_ids, now_iso
              "estado": estado, "ejecuciones": ejecuciones[-30:],
              "historicoModelos": historico_modelos, "salidas": salidas_todas,
              "objetivos": objetivos, "rebajas": rebajas_recientes,
-             "vendidos": vendidos_todos[-60:]}
+             "vendidos": vendidos_todos}
     html = plantilla.read_text(encoding="utf-8").replace(
         "/*DATOS*/null", json.dumps(datos, ensure_ascii=False))
     (site_dir / "index.html").write_text(html, encoding="utf-8")
@@ -818,12 +836,57 @@ def main() -> int:
             with ven_file.open("a", newline="", encoding="utf-8") as fh:
                 w = csv.writer(fh)
                 if sin_cab:
-                    w.writerow(["fecha", "confirmado", "id", "modelo", "titulo", "url", "precio", "dias"])
+                    w.writerow(["fecha", "confirmado", "id", "modelo", "titulo", "url", "precio", "km", "dias"])
                 for vd in vendidos_hoy:
                     w.writerow([vd["fecha"], vd["confirmado"], vd["id"], vd["modelo"],
-                                vd.get("titulo", ""), vd.get("url", ""), vd["precio"], vd["dias"]])
+                                vd.get("titulo", ""), vd.get("url", ""), vd["precio"],
+                                vd.get("km", ""), vd["dias"]])
     except Exception as exc:  # noqa: BLE001
         log(f"⚠ Verificación de ausentes falló: {str(exc)[:90]}")
+
+    # ── resurrección: vendidos recientes cuyo anuncio en realidad sigue vivo ──
+    try:
+        ven_file = STATE_DIR / "vendidos.csv"
+        if ven_file.exists():
+            hace7r = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)).strftime("%Y-%m-%d")
+            filas_v = list(csv.DictReader(ven_file.open(encoding="utf-8")))
+            if filas_v and "confirmado" in filas_v[0]:
+                vivas = [r for r in filas_v if (r.get("confirmado") or "") >= hace7r][:5]
+                log(f"→ Revisión anti-falsos: {len(vivas)} venta(s) reciente(s)…")
+                hist = {}
+                if CSV_FILE.exists():
+                    for row in csv.DictReader(CSV_FILE.open(encoding="utf-8")):
+                        if row.get("id") and row["id"] not in hist:
+                            hist[row["id"]] = row
+                eliminar = set()
+                for r in vivas:
+                    estado, cuerpo = _curl_estado(r.get("url") or "")
+                    if estado == "200" and (str(r.get("id")) in cuerpo
+                                            or (len(cuerpo) > 150000
+                                                and "Ups! Parece" not in cuerpo)):
+                        log(f"   🔁 NO estaba vendido: {r.get('titulo','')[:38]} — vuelve al inventario")
+                        eliminar.add(r.get("id"))
+                        h = hist.get(r["id"], {})
+                        if h:
+                            restored = {k: h.get(k) for k in
+                                        ("id", "published", "title", "price", "year", "km", "hp",
+                                         "fuel", "label", "province", "city", "seller_type",
+                                         "seller_name", "seller_rating", "tipo", "url")}
+                            restored["last_seen"] = now_iso[:10]
+                            merged[r["id"]] = restored
+                    time.sleep(2.5)
+                if eliminar:
+                    with ven_file.open("w", newline="", encoding="utf-8") as fh:
+                        w = csv.writer(fh)
+                        w.writerow(["fecha", "confirmado", "id", "modelo", "titulo", "url",
+                                    "precio", "km", "dias"])
+                        for r in filas_v:
+                            if r.get("id") not in eliminar:
+                                w.writerow([r.get("fecha"), r.get("confirmado"), r.get("id"),
+                                            r.get("modelo"), r.get("titulo"), r.get("url"),
+                                            r.get("precio"), r.get("km"), r.get("dias")])
+    except Exception as exc:  # noqa: BLE001
+        log(f"⚠ Revisión anti-falsos falló: {str(exc)[:90]}")
 
     save_state(merged, new_ads)
 

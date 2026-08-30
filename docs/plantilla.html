@@ -292,10 +292,9 @@ function kpis(I){
                      (!F.trim.size||F.trim.has(trimDe(r.titulo||'')));
   const R7 = (DATA.rebajas||[]).filter(r=>r.fecha>=hace7);
   const r7 = R7.filter(pasaR).length;
-  const hace30=new Date(Date.now()-30*864e5).toISOString().slice(0,10);
   const pasaV = v => (!F.modelo.size||F.modelo.has(v.modelo)) &&
                      (!F.trim.size||F.trim.has(trimDe(v.titulo||'x')));
-  const V30 = (DATA.vendidos||[]).filter(v=>v.confirmado>=hace30);
+  const V30 = DATA.vendidos||[];
   const v30 = V30.filter(pasaV).length;
   const medV = (()=>{const x=V30.map(v=>v.precio).filter(Number).sort((p,q)=>p-q);
     return x.length?fmtE(x[x.length>>1]):null})();
@@ -307,7 +306,7 @@ function kpis(I){
     ['', fmtN(kmMed)+' km', 'km medios'],
     ['g', par(rec,recT), 'vistos últimas 48 h'],
     ['w', par(r7,R7.length), '📉 rebajas en 7 días'],
-    ['w', par(v30,V30.length) + (medV?` <span class=mini>· ${medV}</span>`:''), '💰 vendidos 30 días'],
+    ['w', par(v30,V30.length) + (medV?` <span class=mini>· ${medV}</span>`:''), '💰 vendidos (histórico)'],
   ].map(k=>`<div class="kpi ${k[0]}"><div class="v">${k[1]}</div><div class="l">${k[2]}</div></div>`).join('');
 }
 
@@ -679,18 +678,17 @@ function rebajasSec(){
 function c12(){
   const box=document.getElementById('c12');
   const todas=DATA.vendidos||[];
-  const hace30=new Date(Date.now()-30*864e5).toISOString().slice(0,10);
   const pasa=v=>(!F.modelo.size||F.modelo.has(v.modelo))&&(!F.trim.size||F.trim.has(trimDe(v.titulo||'x')));
-  const R=todas.filter(v=>v.confirmado>=hace30).filter(pasa);
+  const R=todas.filter(pasa);
   if(!R.length){
-    box.innerHTML=`<p class=mini>sin ventas confirmadas en 30 días${F.modelo.size||F.trim.size?' con estos filtros':''} — cuando se confirme una, aparecerá aquí</p>`;return}
+    box.innerHTML=`<p class=mini>sin ventas confirmadas${F.modelo.size||F.trim.size?' con estos filtros':''} — cuando se confirme una, aparecerá aquí</p>`;return}
   const med=a=>{const x=a.filter(Number).sort((p,q)=>p-q);return x.length?x[x.length>>1]:null};
   const porMod={};
   R.forEach(v=>(porMod[v.modelo]=porMod[v.modelo]||[]).push(v));
   const filas=Object.entries(porMod).map(([m,vs])=>({m,n:vs.length,med:med(vs.map(v=>v.precio))}))
     .sort((a,b)=>b.n-a.n);
   const mx=Math.max(...filas.map(f=>f.n));
-  let html=`<p class=mini style="margin:2px 0 8px">Ventas confirmadas últimos 30 días (total ${R.length})</p>`;
+  let html=`<p class=mini style="margin:2px 0 8px">Ventas confirmadas · histórico (total ${R.length})</p>`;
   filas.forEach(f=>{
     const col=COLMOD[f.m]||'#9aa7bd';
     const w=Math.max(26,Math.round((f.n/mx)*Math.max(120,(box.clientWidth||360)-210)));
@@ -710,10 +708,9 @@ function vendidosSec(){
   const box=document.getElementById('vendidosSec');
   const todas=DATA.vendidos||[];
   const pasa=v=>(!F.modelo.size||F.modelo.has(v.modelo))&&(!F.trim.size||F.trim.has(trimDe(v.titulo||'x')));
-  const V=todas.filter(pasa).reverse().slice(0,20);
-  const hace30=new Date(Date.now()-30*864e5).toISOString().slice(0,10);
-  const mes=todas.filter(v=>v.confirmado>=hace30);
-  let html=`<h3>💰 Vendidos <span class=tag>${mes.length} en 30 días · verificados uno a uno</span></h3>`;
+  const V=todas.filter(pasa).reverse();
+  const mes=todas;
+  let html=`<h3>💰 Vendidos <span class=tag>${todas.length} en total · histórico completo · verificados uno a uno</span></h3>`;
   if(!V.length){
     html+=`<p class=mini style="margin:0 0 6px">Todavía sin ventas confirmadas. Cuando un anuncio desaparece (2+ días sin verse), se comprueba su URL: si coches.net lo ha retirado, el coche pasa aquí con su último precio.</p>`;
     box.innerHTML=html;return;
@@ -723,14 +720,15 @@ function vendidosSec(){
       `<span class=mini style="color:var(--tx2)">vendido ~${v.confirmado.slice(5)}</span>`+
       `${v.ref?`<b style="color:var(--tx2)">${v.ref}</b>`:''}<b style="color:${COLMOD[v.modelo]||'var(--tx)'}">${v.modelo}</b>`+
       `<b>${fmtE(v.precio)}</b>`+
-      (v.dias!=null&&v.dias!==''?`<span class=mini>${v.dias} días en venta</span>`:'')+
+      (v.km!=null?`<span class=mini">${fmtN(v.km)} km</span>`:'')+
+      (v.dias!=null&&v.dias!==''?`<span class=mini">${v.dias} días en venta</span>`:'')+
       (v.url?`<a href="${v.url}" class=mini>ver anuncio ↗</a>`:'')+
       `<span class=mini style="margin-left:auto">última vez visto ${v.fecha.slice(5)}</span></div>`;
   });
   if(mes.length>1){
     const med=a=>{const x=a.filter(Number).sort((p,q)=>p-q);return x.length?x[x.length>>1]:null};
     const mp=med(mes.map(v=>v.precio)), md=med(mes.map(v=>v.dias));
-    html+=`<p class=mini style="margin:8px 0 0">Mediana de venta (30 días): <b>${mp?fmtE(mp):'—'}</b>${md?` · mediana de días en venta: <b>${md}</b>`:''}</p>`;
+    html+=`<p class=mini style="margin:8px 0 0">Mediana de venta (histórico): <b>${mp?fmtE(mp):'—'}</b>${md?` · mediana de días en venta: <b>${md}</b>`:''}</p>`;
   }
   box.innerHTML=html;
 }
