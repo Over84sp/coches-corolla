@@ -1761,8 +1761,7 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20443071/1dfa4070-9720-47db-aa2f-4112f021ab7e.jpg",
   "url": "https://www.coches.net/toyota-corolla-200h-style-editiontouring-sport-5p-electrico-hibrido-2024-en-madrid-71096991-covo.aspx",
-  "last_seen": "2026-08-28",
-  "verificado": "2026-08-30"
+  "last_seen": "2026-08-30"
  },
  "71096894": {
   "id": "71096894",
@@ -1782,8 +1781,7 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20442974/dacd0717-12f4-4f3c-9fab-fb5375f4da6b.jpg",
   "url": "https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2024-en-madrid-71096894-covo.aspx",
-  "last_seen": "2026-08-28",
-  "verificado": "2026-08-30"
+  "last_seen": "2026-08-30"
  },
  "71386598": {
   "id": "71386598",
@@ -1944,6 +1942,46 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20419369/f79c41d9-f947-49a5-85da-55bfafc8e5d9.jpg",
   "url": "https://www.coches.net/toyota-corolla-200h-grsport-touring-sport-5p-electrico-hibrido-2023-en-barcelona-71087877-covo.aspx",
+  "last_seen": "2026-08-30"
+ },
+ "71395050": {
+  "id": "71395050",
+  "published": "2026-08-30",
+  "title": "TOYOTA Corolla 2.0 180H STYLE ECVT TOURING SPORT",
+  "price": 24099,
+  "year": 2022,
+  "km": 97017,
+  "hp": 180,
+  "fuel": "Híbrido",
+  "label": "ECO",
+  "province": "Madrid",
+  "city": "Madrid Capital",
+  "seller_type": "Profesional",
+  "seller_name": "Autohero Center Madrid",
+  "seller_rating": 4.3,
+  "tipo": "Ocasión",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20681599/e9bf3897-d010-40e2-98e4-0ec723e047dd.jpg",
+  "url": "https://www.coches.net/toyota-corolla-20-180h-style-ecvt-touring-sport-5p-electrico-hibrido-2022-en-madrid-71395050-covo.aspx",
+  "last_seen": "2026-08-30"
+ },
+ "71100636": {
+  "id": "71100636",
+  "published": "2026-07-16",
+  "title": "TOYOTA Corolla 140H Style Touring Sport",
+  "price": 28500,
+  "year": 2023,
+  "km": 17506,
+  "hp": 140,
+  "fuel": "Híbrido",
+  "label": "ECO",
+  "province": "Sevilla",
+  "city": "Sevilla Capital",
+  "seller_type": "Profesional",
+  "seller_name": "Ocasionplus SEVILLA",
+  "seller_rating": 3.8,
+  "tipo": "Ocasión",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20446511/8e84e3ba-d793-4efd-901a-e525218cb340.jpg",
+  "url": "https://www.coches.net/toyota-corolla-140h-style-touring-sport-5p-electrico-hibrido-2023-en-sevilla-71100636-covo.aspx",
   "last_seen": "2026-08-30"
  }
 }
