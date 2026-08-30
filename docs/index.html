@@ -292,6 +292,13 @@ function kpis(I){
                      (!F.trim.size||F.trim.has(trimDe(r.titulo||'')));
   const R7 = (DATA.rebajas||[]).filter(r=>r.fecha>=hace7);
   const r7 = R7.filter(pasaR).length;
+  const hace30=new Date(Date.now()-30*864e5).toISOString().slice(0,10);
+  const pasaV = v => (!F.modelo.size||F.modelo.has(v.modelo)) &&
+                     (!F.trim.size||F.trim.has(trimDe(v.titulo||'x')));
+  const V30 = (DATA.vendidos||[]).filter(v=>v.confirmado>=hace30);
+  const v30 = V30.filter(pasaV).length;
+  const medV = (()=>{const x=V30.map(v=>v.precio).filter(Number).sort((p,q)=>p-q);
+    return x.length?fmtE(x[x.length>>1]):null})();
   document.getElementById('kpis').innerHTML = [
     ['a', par(I.length,T.length), 'coches' + (filtrando?' · filtro activo':'')],
     ['', par(an,anT), 'anuncios con multilistings'],
@@ -299,7 +306,8 @@ function kpis(I){
     ['a', fmtE(med), 'precio mediano'],
     ['', fmtN(kmMed)+' km', 'km medios'],
     ['g', par(rec,recT), 'vistos últimas 48 h'],
-    ['w', par(r7,R7.length), 'rebajas en 7 días'],
+    ['w', par(r7,R7.length), '📉 rebajas en 7 días'],
+    ['w', par(v30,V30.length) + (medV?` <span class=mini>· ${medV}</span>`:''), '💰 vendidos 30 días'],
   ].map(k=>`<div class="kpi ${k[0]}"><div class="v">${k[1]}</div><div class="l">${k[2]}</div></div>`).join('');
 }
 
