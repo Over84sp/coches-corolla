@@ -58,12 +58,13 @@ def log(msg: str) -> None:
 
 
 def fetch_html(url: str, retries: int = 4):
-    """Descarga la página y valida que trae el JSON de datos.
+    """Descarga la página y valida que el JSON de datos se parsea completo.
 
     Usa curl si está disponible (su fingerprint TLS pasa los filtros anti-bot de
     coches.net; urllib recibe página de bloqueo en algunos datacenters). Si llega
-    la página de bloqueo ("Ups!...") espera cada vez más y reintenta.
-    Devuelve el HTML o None si no se consigue."""
+    la página de bloqueo ("Ups!...") O el JSON embebido está truncado/ilegible,
+    espera cada vez más y reintenta.
+    Devuelve el dict initialResults, o None si no se consigue."""
     last_exc = None
     for attempt in range(1, retries + 1):
         try:
@@ -75,7 +76,9 @@ def fetch_html(url: str, retries: int = 4):
             if not RE_PROPS.search(html):
                 raise RuntimeError("página de bloqueo anti-bot o maquetación cambiada "
                                    f"(inicio: {re.sub(r'[^ -~áéíóúñÁÉÍÓÚÑ ]', ' ', html[:150])})")
-            return html
+            # Parsear AQUÍ DENTRO: si el JSON está truncado/ilegible (respuesta a
+            # medias por rate-limit), se reintenta en vez de petar la tirada.
+            return parse_listings(html)
         except Exception as exc:  # noqa: BLE001
             last_exc = exc
             log(f"  [!] intento {attempt}/{retries}: {str(exc)[:120]}")
@@ -136,14 +139,16 @@ def collect_ads() -> list:
     while page <= MAX_PAGES:
         url = BASE_URL + (f"?pg={page}" if page > 1 else "")
         log(f"→ Descargando página {page}: {url}")
-        html = fetch_html(url, retries=4 if page == 1 else 1)
-        if html is None:
+        # La 1ª página se reintenta más (sin ella no hay nada); el resto se
+        # reintenta un par de veces más para capear rate-limit transitorio.
+        results = fetch_html(url, retries=4 if page == 1 else 3)
+        if results is None:
             if page == 1:
                 log("  [!] La primera página no está accesible; tirada abortada (sin cambios de estado).")
             else:
-                log(f"  [!] Página {page} bloqueada; sigo con {len(ads)} anuncios ya descargados.")
+                log(f"  [!] Página {page} bloqueada tras reintentos; sigo con "
+                    f"{len(ads)} anuncios ya descargados.")
             break
-        results = parse_listings(html)
         items = results.get("items", [])
         ads.extend(items)
         total_pages = results.get("totalPages", 1)
@@ -766,7 +771,24 @@ def main() -> int:
     now_iso = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     log(f"═══ coches.net · Corolla Touring Sports ≥{MIN_YEAR} · ≥{MIN_HP} CV · {now_iso} ═══")
 
-    raw_ads = collect_ads()
+    # Descarga con red de seguridad: un fallo imprevisto de descarga NUNCA debe
+    # volar el workflow (exit 1). Se aborta la tirada sin tocar el estado y la
+    # próxima ejecución recupera las novedades por dedupeo.
+    try:
+        raw_ads = collect_ads()
+    except Exception as exc:  # noqa: BLE001
+        log(f"⚠ Error descargando el listado: {str(exc)[:120]}")
+        log("  Tirada abortada sin cambios de estado (se conserva lo anterior).")
+        try:
+            registrar_estado(now_iso, 0, 0, False, aviso="error descarga")
+        except Exception:  # noqa: BLE001
+            pass
+        Path(__file__).resolve().parent.joinpath("resumen.md").write_text(
+            f"# Corolla TS ≥{MIN_YEAR} · ≥{MIN_HP} CV — {now_iso}\n\n"
+            "⚠ No se pudo descargar el listado (bloqueo o error de red). "
+            "El estado se conserva; la próxima ejecución recuperará las novedades.\n",
+            encoding="utf-8")
+        return 0
     log(f"→ Anuncios descargados: {len(raw_ads)} (antes de filtrar)")
 
     matched, seen_ids_run = [], set()
