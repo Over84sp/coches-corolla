@@ -217,7 +217,7 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20039512/cf5b2d96-2b45-478f-8978-9c7695086037.jpg",
   "url": "https://www.coches.net/toyota-corolla-20-180h-style-ecvt-touring-sport-5p-electrico-hibrido-2022-en-barcelona-70656258-covo.aspx",
-  "last_seen": "2026-09-09"
+  "last_seen": "2026-09-10"
  },
  "71322242": {
   "id": "71322242",
@@ -962,7 +962,7 @@
  "71069969": {
   "id": "71069969",
   "published": "2026-07-14",
-  "title": "TOYOTA Corolla 140H Active Touring Sport",
+  "title": "TOYOTA Corolla ACTIVE HYBRID 140 TOURING SPORTS",
   "price": 27990,
   "year": 2026,
   "km": 7500,
@@ -976,7 +976,7 @@
   "seller_rating": 3.7,
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20419482/adadc6b2-0c4b-4cd7-a986-6a4540c4e38d.jpg",
-  "url": "https://www.coches.net/toyota-corolla-140h-active-touring-sport-5p-electrico-hibrido-2026-en-madrid-71069969-covo.aspx",
+  "url": "https://www.coches.net/toyota-corolla-active-hybrid-140-touring-sports-5p-electrico-hibrido-2026-en-madrid-71069969-covo.aspx",
   "last_seen": "2026-09-10"
  },
  "71232050": {
@@ -1137,7 +1137,7 @@
   "tipo": "Ocasión",
   "foto": "",
   "url": "https://www.coches.net/toyota-corolla-140h-style-edition-touring-sport-5p-electrico-hibrido-2023-en-barcelona-71020783-covo.aspx",
-  "last_seen": "2026-09-08"
+  "last_seen": "2026-09-10"
  },
  "71191386": {
   "id": "71191386",
@@ -1579,7 +1579,7 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20671207/56c26b80-2fad-4b97-ad5e-91572db42477.jpg",
   "url": "https://www.coches.net/toyota-corolla-140h-style-edition-touring-sport-5p-electrico-hibrido-2023-en-vizcaya-71375169-covo.aspx",
-  "last_seen": "2026-09-08"
+  "last_seen": "2026-09-10"
  },
  "71374659": {
   "id": "71374659",
@@ -2248,7 +2248,7 @@
   "id": "71414706",
   "published": "2026-09-01",
   "title": "TOYOTA Corolla 2.0 180H ADVANCE LUXURY TOURING SPORT",
-  "price": 23499,
+  "price": 22999,
   "year": 2022,
   "km": 75664,
   "hp": 180,
@@ -2468,7 +2468,7 @@
   "id": "71421620",
   "published": "2026-09-02",
   "title": "TOYOTA Corolla 2.0 180H ADVANCE LUXURY TOURING SPORT",
-  "price": 23499,
+  "price": 22999,
   "year": 2022,
   "km": 75664,
   "hp": 180,
@@ -2508,7 +2508,7 @@
   "id": "71420963",
   "published": "2026-09-02",
   "title": "TOYOTA Corolla 2.0 180H ADVANCE LUXURY TOURING SPORT",
-  "price": 23499,
+  "price": 22999,
   "year": 2022,
   "km": 75664,
   "hp": 180,
@@ -3242,6 +3242,46 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20754606/42a362f8-368d-4fc9-b9a1-a4eac3d826d2.jpg",
   "url": "https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2024-en-huesca-71478604-covo.aspx",
+  "last_seen": "2026-09-10"
+ },
+ "71486791": {
+  "id": "71486791",
+  "published": "2026-09-10",
+  "title": "TOYOTA Corolla 140H Active Plus Touring Sport",
+  "price": 27890,
+  "year": 2025,
+  "km": 4903,
+  "hp": 140,
+  "fuel": "Híbrido",
+  "label": "ECO",
+  "province": "Madrid",
+  "city": "Madrid Capital",
+  "seller_type": "Profesional",
+  "seller_name": "Toyota Kuruma Seminuevos y Ocasión Plus",
+  "seller_rating": 3.7,
+  "tipo": "Ocasión",
+  "foto": "",
+  "url": "https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2025-en-madrid-71486791-covo.aspx",
+  "last_seen": "2026-09-10"
+ },
+ "71486146": {
+  "id": "71486146",
+  "published": "2026-09-10",
+  "title": "TOYOTA Corolla 2.0 180H GRSPORT ECVT TOURING SPORT",
+  "price": 25990,
+  "year": 2022,
+  "km": 98814,
+  "hp": 180,
+  "fuel": "Híbrido",
+  "label": "ECO",
+  "province": "Murcia",
+  "city": "Murcia",
+  "seller_type": "Profesional",
+  "seller_name": "Clicars Murcia",
+  "seller_rating": "",
+  "tipo": "Ocasión",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20759135/908955de-e70e-46c2-9458-c02e2f27e84e.jpg",
+  "url": "https://www.coches.net/toyota-corolla-20-180h-grsport-ecvt-touring-sport-5p-electrico-hibrido-2022-en-murcia-71486146-covo.aspx",
   "last_seen": "2026-09-10"
  }
 }
