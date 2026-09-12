@@ -37,7 +37,7 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20016089/6dd0af7e-fc97-4600-b6db-b44a9c0cbd0a.jpg",
   "url": "https://www.coches.net/toyota-corolla-200h-style-touring-sport-5p-electrico-hibrido-2025-en-valencia-70625414-covo.aspx",
-  "last_seen": "2026-09-11"
+  "last_seen": "2026-09-12"
  },
  "71201409": {
   "id": "71201409",
@@ -77,7 +77,7 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20456102/a712fbd7-0723-4e55-b032-ab63f382e6ff.jpg",
   "url": "https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2023-en-barcelona-71117052-covo.aspx",
-  "last_seen": "2026-09-11"
+  "last_seen": "2026-09-12"
  },
  "71217828": {
   "id": "71217828",
@@ -197,7 +197,7 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20569591/650b1124-d26f-4c95-b41c-dc161b44ee28.jpg",
   "url": "https://www.coches.net/toyota-corolla-20-180h-style-ecvt-touring-sport-5p-electrico-hibrido-2022-en-malaga-71244559-covo.aspx",
-  "last_seen": "2026-09-11"
+  "last_seen": "2026-09-12"
  },
  "70656258": {
   "id": "70656258",
@@ -757,7 +757,7 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20606234/d3f42f48-49fd-4f22-9f08-2938699f459e.jpg",
   "url": "https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2024-en-girona-71286581-covo.aspx",
-  "last_seen": "2026-09-11"
+  "last_seen": "2026-09-12"
  },
  "71317176": {
   "id": "71317176",
@@ -1157,7 +1157,7 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20528404/e29b564f-cd8a-413b-9f23-6d6f97b79bc8.jpg",
   "url": "https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2024-en-valencia-71191386-covo.aspx",
-  "last_seen": "2026-09-11"
+  "last_seen": "2026-09-12"
  },
  "71270925": {
   "id": "71270925",
@@ -3502,6 +3502,26 @@
   "tipo": "Km0/Demo",
   "foto": "https://a.ccdn.es/cnet/vehicles/20769428/c0c45285-9a22-47af-b559-05c6c8647405.jpg",
   "url": "https://www.coches.net/km-0/toyota/corolla/segovia/200h-style-touring-sport-electrico-hibrido-de-km0-71495757-kovn.aspx",
+  "last_seen": "2026-09-12"
+ },
+ "71499221": {
+  "id": "71499221",
+  "published": "2026-09-12",
+  "title": "TOYOTA Corolla 200H Style EditionTouring Sport",
+  "price": 26490,
+  "year": 2023,
+  "km": 110000,
+  "hp": 196,
+  "fuel": "Híbrido",
+  "label": "",
+  "province": "Madrid",
+  "city": "Arroyomolinos",
+  "seller_type": "Profesional",
+  "seller_name": "Ocasion Unica Automoviles",
+  "seller_rating": 4.4,
+  "tipo": "Ocasión",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20771622/33160376-e4dd-480b-a95a-a7b41a692c64.jpg",
+  "url": "https://www.coches.net/toyota-corolla-200h-style-editiontouring-sport-5p-electrico-hibrido-2024-en-madrid-71499221-covo.aspx",
   "last_seen": "2026-09-12"
  }
 }
