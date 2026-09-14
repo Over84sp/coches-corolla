@@ -197,7 +197,7 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20569591/650b1124-d26f-4c95-b41c-dc161b44ee28.jpg",
   "url": "https://www.coches.net/toyota-corolla-20-180h-style-ecvt-touring-sport-5p-electrico-hibrido-2022-en-malaga-71244559-covo.aspx",
-  "last_seen": "2026-09-12"
+  "last_seen": "2026-09-14"
  },
  "70656258": {
   "id": "70656258",
@@ -1101,9 +1101,9 @@
  },
  "70872887": {
   "id": "70872887",
-  "published": "2026-06-16",
+  "published": "2026-09-13",
   "title": "TOYOTA Corolla 2.0 180H STYLE ECVT TOURING SPORT",
-  "price": 23990,
+  "price": 22990,
   "year": 2022,
   "km": 112889,
   "hp": 180,
@@ -1113,11 +1113,11 @@
   "city": "Torrejón de Ardoz",
   "seller_type": "Profesional",
   "seller_name": "Toyota Ocasión Motor Arjona",
-  "seller_rating": 4.3,
+  "seller_rating": 4.4,
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20236756/90461cd3-811b-4224-8912-de52f469abc6.jpg",
   "url": "https://www.coches.net/toyota-corolla-20-180h-style-ecvt-touring-sport-5p-electrico-hibrido-2022-en-madrid-70872887-covo.aspx",
-  "last_seen": "2026-09-02"
+  "last_seen": "2026-09-14"
  },
  "71020783": {
   "id": "71020783",
@@ -1137,7 +1137,7 @@
   "tipo": "Ocasión",
   "foto": "",
   "url": "https://www.coches.net/toyota-corolla-140h-style-edition-touring-sport-5p-electrico-hibrido-2023-en-barcelona-71020783-covo.aspx",
-  "last_seen": "2026-09-13"
+  "last_seen": "2026-09-14"
  },
  "71191386": {
   "id": "71191386",
@@ -1715,12 +1715,11 @@
   "city": "Leganés",
   "seller_type": "Profesional",
   "seller_name": "Comauto Sur",
-  "seller_rating": 3.5,
+  "seller_rating": 3.7,
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/19694461/8fff2767-baee-4207-bb9b-22a2708606f1.jpg",
   "url": "https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2023-en-madrid-70222483-covo.aspx",
-  "last_seen": "2026-08-28",
-  "verificado": "2026-08-30"
+  "last_seen": "2026-09-14"
  },
  "70222445": {
   "id": "70222445",
@@ -1736,12 +1735,11 @@
   "city": "Leganés",
   "seller_type": "Profesional",
   "seller_name": "Comauto Sur",
-  "seller_rating": 3.5,
+  "seller_rating": 3.7,
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/19694433/17624781-d20d-41d0-b81b-12688104d22f.jpg",
   "url": "https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2025-en-madrid-70222445-covo.aspx",
-  "last_seen": "2026-08-28",
-  "verificado": "2026-08-30"
+  "last_seen": "2026-09-14"
  },
  "71096991": {
   "id": "71096991",
@@ -2582,7 +2580,7 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20705736/27285720-809b-4e8d-a099-cb49dad2d4ed.jpg",
   "url": "https://www.coches.net/toyota-corolla-140h-style-touring-sport-5p-electrico-hibrido-2024-en-barcelona-71421458-covo.aspx",
-  "last_seen": "2026-09-13"
+  "last_seen": "2026-09-14"
  },
  "71421851": {
   "id": "71421851",
@@ -2602,7 +2600,7 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20697408/7f595ae7-917c-4306-8263-0b3f215a455d.jpg",
   "url": "https://www.coches.net/toyota-corolla-140h-style-touring-sport-5p-electrico-hibrido-2024-en-vizcaya-71421851-covo.aspx",
-  "last_seen": "2026-09-13"
+  "last_seen": "2026-09-14"
  },
  "71426395": {
   "id": "71426395",
@@ -3562,6 +3560,46 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20533072/1fa9bad1-d465-413a-9ab5-52d3693fd9cd.jpg",
   "url": "https://www.coches.net/toyota-corolla-20-180h-style-ecvt-touring-sport-5p-electrico-hibrido-2022-en-asturias-71196560-covo.aspx",
+  "last_seen": "2026-09-14"
+ },
+ "71510781": {
+  "id": "71510781",
+  "published": "2026-09-14",
+  "title": "TOYOTA Corolla 2.0 180H GRSPORT ECVT TOURING SPORT",
+  "price": 25600,
+  "year": 2022,
+  "km": 67038,
+  "hp": 180,
+  "fuel": "Híbrido",
+  "label": "ECO",
+  "province": "Barcelona",
+  "city": "Sabadell",
+  "seller_type": "Profesional",
+  "seller_name": "Ippon Motor Vallés",
+  "seller_rating": 4.5,
+  "tipo": "Ocasión",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20777866/14e23556-f0c8-4292-bc03-672b409f5f27.jpg",
+  "url": "https://www.coches.net/toyota-corolla-20-180h-grsport-ecvt-touring-sport-5p-electrico-hibrido-2022-en-barcelona-71510781-covo.aspx",
+  "last_seen": "2026-09-14"
+ },
+ "71510541": {
+  "id": "71510541",
+  "published": "2026-09-14",
+  "title": "TOYOTA Corolla 2.0 180H GRSPORT ECVT TOURING SPORT",
+  "price": 27490,
+  "year": 2022,
+  "km": 74700,
+  "hp": 180,
+  "fuel": "Híbrido",
+  "label": "ECO",
+  "province": "Baleares",
+  "city": "Palma de Mallorca",
+  "seller_type": "Profesional",
+  "seller_name": "Fr Cars",
+  "seller_rating": "",
+  "tipo": "Ocasión",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20777667/8c62106a-5fbc-46b6-9373-e3eb7aa6d930.jpg",
+  "url": "https://www.coches.net/toyota-corolla-20-180h-grsport-ecvt-touring-sport-5p-electrico-hibrido-2022-en-baleares-71510541-covo.aspx",
   "last_seen": "2026-09-14"
  }
 }
