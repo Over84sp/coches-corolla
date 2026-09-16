@@ -1137,7 +1137,7 @@
   "tipo": "Ocasión",
   "foto": "",
   "url": "https://www.coches.net/toyota-corolla-140h-style-edition-touring-sport-5p-electrico-hibrido-2023-en-barcelona-71020783-covo.aspx",
-  "last_seen": "2026-09-15"
+  "last_seen": "2026-09-16"
  },
  "71191386": {
   "id": "71191386",
@@ -1264,7 +1264,7 @@
   "id": "71146672",
   "published": "2026-07-23",
   "title": "TOYOTA Corolla 200H Style Touring Sport",
-  "price": 30990,
+  "price": 30290,
   "year": 2025,
   "km": 19160,
   "hp": 196,
@@ -1339,7 +1339,7 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20497688/d04f4cd9-42bf-4cad-acce-efe8790950b6.jpg",
   "url": "https://www.coches.net/toyota-corolla-200h-grsport-touring-sport-5p-electrico-hibrido-2024-en-madrid-71156824-covo.aspx",
-  "last_seen": "2026-09-14"
+  "last_seen": "2026-09-16"
  },
  "71094495": {
   "id": "71094495",
@@ -3740,6 +3740,46 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20756233/0eec0140-a6d4-4902-860c-2c325f678871.jpg",
   "url": "https://www.coches.net/toyota-corolla-200h-grsport-touring-sport-5p-electrico-hibrido-2026-en-barcelona-71524577-covo.aspx",
+  "last_seen": "2026-09-16"
+ },
+ "71531216": {
+  "id": "71531216",
+  "published": "2026-09-16",
+  "title": "TOYOTA Corolla 2.0 180H STYLE ECVT TOURING SPORT",
+  "price": 24990,
+  "year": 2022,
+  "km": 65083,
+  "hp": 180,
+  "fuel": "Híbrido",
+  "label": "ECO",
+  "province": "Girona",
+  "city": "Olot",
+  "seller_type": "Profesional",
+  "seller_name": "Toyota Figueres",
+  "seller_rating": 4.8,
+  "tipo": "Ocasión",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20796594/3384e071-7b20-427a-b85f-df346ad1b53a.jpg",
+  "url": "https://www.coches.net/toyota-corolla-20-180h-style-ecvt-touring-sport-5p-electrico-hibrido-2022-en-girona-71531216-covo.aspx",
+  "last_seen": "2026-09-16"
+ },
+ "71531147": {
+  "id": "71531147",
+  "published": "2026-09-16",
+  "title": "TOYOTA Corolla 2.0 180H STYLE ECVT TOURING SPORT",
+  "price": 23990,
+  "year": 2022,
+  "km": 79337,
+  "hp": 180,
+  "fuel": "Híbrido",
+  "label": "ECO",
+  "province": "Girona",
+  "city": "Olot",
+  "seller_type": "Profesional",
+  "seller_name": "Toyota Figueres",
+  "seller_rating": 4.8,
+  "tipo": "Ocasión",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20796560/eabae0cc-9fec-4843-9b10-92f90bc5f967.jpg",
+  "url": "https://www.coches.net/toyota-corolla-20-180h-style-ecvt-touring-sport-5p-electrico-hibrido-2022-en-girona-71531147-covo.aspx",
   "last_seen": "2026-09-16"
  }
 }
