@@ -757,7 +757,7 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20606234/d3f42f48-49fd-4f22-9f08-2938699f459e.jpg",
   "url": "https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2024-en-girona-71286581-covo.aspx",
-  "last_seen": "2026-09-17"
+  "last_seen": "2026-09-18"
  },
  "71317176": {
   "id": "71317176",
@@ -1073,11 +1073,11 @@
   "city": "Leganés",
   "seller_type": "Profesional",
   "seller_name": "Comauto Sur",
-  "seller_rating": 3.5,
+  "seller_rating": 3.7,
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20556356/a7d3fcb0-bfda-4ea0-90a0-5aeedeaf6faa.jpg",
   "url": "https://www.coches.net/toyota-corolla-200h-style-touring-sport-5p-electrico-hibrido-2025-en-madrid-71228610-covo.aspx",
-  "last_seen": "2026-08-30"
+  "last_seen": "2026-09-18"
  },
  "71043593": {
   "id": "71043593",
@@ -3658,7 +3658,7 @@
   "seller_name": "Ocasionplus BADALONA",
   "seller_rating": 4.3,
   "tipo": "Ocasión",
-  "foto": "https://a.ccdn.es/cnet/vehicles/20786095/bcb42bc8-6f61-46a9-ae1e-8680f05bd2dc.jpg",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20786095/c1d4ea40-2cd6-407b-b193-45271ec9a1d7.jpg",
   "url": "https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2024-en-barcelona-71521766-covo.aspx",
   "last_seen": "2026-09-18"
  },
@@ -3980,6 +3980,26 @@
   "tipo": "Ocasión",
   "foto": "https://a.ccdn.es/cnet/vehicles/20806569/d8a22be1-2046-459a-a068-f05240322f05.jpg",
   "url": "https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2023-en-valladolid-71544213-covo.aspx",
+  "last_seen": "2026-09-18"
+ },
+ "71230058": {
+  "id": "71230058",
+  "published": "2026-08-04",
+  "title": "TOYOTA Corolla 140H Active Plus Touring Sport",
+  "price": 24550,
+  "year": 2023,
+  "km": 43612,
+  "hp": 140,
+  "fuel": "Híbrido",
+  "label": "ECO",
+  "province": "Barcelona",
+  "city": "Barcelona Capital",
+  "seller_type": "Profesional",
+  "seller_name": "OcasionPlus Barcelona La Maquinista",
+  "seller_rating": 4.1,
+  "tipo": "Ocasión",
+  "foto": "https://a.ccdn.es/cnet/vehicles/20556189/270713a6-423c-49c0-8c45-089da20b4fec.jpg",
+  "url": "https://www.coches.net/toyota-corolla-140h-active-plus-touring-sport-5p-electrico-hibrido-2023-en-barcelona-71230058-covo.aspx",
   "last_seen": "2026-09-18"
  }
 }
